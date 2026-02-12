@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            scrcpy-smart.sh
+            install.sh
+          body: |
+            ## What's Changed
+            See [CHANGELOG.md](https://github.com/tareq-alomari/scrcpy-smart/blob/main/CHANGELOG.md) for details.
+            
+            ## Installation
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
+            ```
+          draft: false
+          prerelease: false

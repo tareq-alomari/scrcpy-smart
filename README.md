@@ -1,6 +1,22 @@
 # 🚀 Scrcpy Smart Connect
 
-Smart wireless connection manager for [scrcpy](https://github.com/Genymobile/scrcpy) - automatically connects to Android devices via WiFi with USB fallback.
+<div align="center">
+
+[![GitHub release](https://img.shields.io/github/v/release/tareq-alomari/scrcpy-smart)](https://github.com/tareq-alomari/scrcpy-smart/releases)
+[![CI](https://github.com/tareq-alomari/scrcpy-smart/workflows/CI/badge.svg)](https://github.com/tareq-alomari/scrcpy-smart/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue)](https://github.com/tareq-alomari/scrcpy-smart)
+[![Shell](https://img.shields.io/badge/shell-bash-green)](https://www.gnu.org/software/bash/)
+
+**Smart wireless connection manager for scrcpy - Connect to Android devices via WiFi automatically**
+
+[English](README.md) · [العربية](docs/README.ar.md) · [Español](docs/README.es.md) · [中文](docs/README.zh.md)
+
+[Features](#-features) • [Installation](#-quick-install) • [Usage](#-usage) • [Documentation](https://github.com/tareq-alomari/scrcpy-smart/wiki)
+
+</div>
+
+---
 
 ## ✨ Features
 
@@ -15,25 +31,34 @@ Smart wireless connection manager for [scrcpy](https://github.com/Genymobile/scr
 
 ## 📋 Requirements
 
-- [scrcpy](https://github.com/Genymobile/scrcpy) installed
-- [ADB](https://developer.android.com/tools/adb) installed
+- [scrcpy](https://github.com/Genymobile/scrcpy) - Screen mirroring tool
+- [ADB](https://developer.android.com/tools/adb) - Android Debug Bridge
 - Android device with USB debugging enabled
 
 ### Installation by OS
 
-**Linux (Ubuntu/Debian):**
+<details>
+<summary><b>Linux (Ubuntu/Debian)</b></summary>
+
 ```bash
 sudo apt install scrcpy adb
 ```
+</details>
 
-**macOS:**
+<details>
+<summary><b>macOS</b></summary>
+
 ```bash
 brew install scrcpy android-platform-tools
 ```
+</details>
 
-**Windows:**
+<details>
+<summary><b>Windows</b></summary>
+
 - Install [scrcpy](https://github.com/Genymobile/scrcpy#windows)
 - Install [ADB](https://developer.android.com/tools/adb)
+</details>
 
 ## 🚀 Quick Install
 
@@ -43,11 +68,10 @@ cd scrcpy-smart
 ./install.sh
 ```
 
-The installer will:
-- Check dependencies
-- Install to `~/.local/bin`
-- Add to your PATH
-- Create `phone` alias
+Or one-liner:
+```bash
+curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
+```
 
 ## 📖 Usage
 
@@ -76,14 +100,14 @@ scrcpy-smart --select    # Select device manually
 3. Run: `scrcpy-smart`
 
 The script will:
-- Detect your device
-- Get its IP address
-- Switch to wireless mode
-- Save the IP for future use
+- ✅ Detect your device
+- ✅ Get its IP address
+- ✅ Switch to wireless mode
+- ✅ Save the IP for future use
 
 ### Subsequent Uses
 
-Simply run `scrcpy-smart` or `phone` - no USB cable needed!
+Simply run `scrcpy-smart` or `phone` - **no USB cable needed!**
 
 ## ⚙️ Configuration
 
@@ -97,50 +121,56 @@ Edit `scrcpy-smart.sh` and modify scrcpy parameters:
 scrcpy -s "$SAVED_IP:5555" --max-size 1024 --bit-rate 8M --max-fps 60
 ```
 
-**Options:**
-- `--max-size`: Resolution (720, 1024, 1920)
-- `--bit-rate`: Quality (2M-8M)
-- `--max-fps`: Frame rate (30, 60)
+**Presets:**
 
-**For better performance:**
-```bash
---max-size 720 --bit-rate 4M --max-fps 30
-```
-
-**For better quality:**
-```bash
---max-size 1920 --bit-rate 16M --max-fps 60
-```
+| Preset | Resolution | Bitrate | FPS | Use Case |
+|--------|-----------|---------|-----|----------|
+| Performance | 720 | 4M | 30 | Weak WiFi |
+| Balanced | 1024 | 8M | 60 | Default |
+| Quality | 1920 | 16M | 60 | Strong WiFi |
 
 ## 🐛 Troubleshooting
 
-**Connection fails:**
+<details>
+<summary><b>Connection fails</b></summary>
+
 - Ensure device and computer are on same WiFi
 - Check USB debugging is enabled
 - Try: `scrcpy-smart --reset`
+- Restart ADB: `adb kill-server && adb start-server`
+</details>
 
-**Lag or stuttering:**
+<details>
+<summary><b>Lag or stuttering</b></summary>
+
 - Lower bitrate: `--bit-rate 4M`
 - Reduce resolution: `--max-size 720`
 - Check WiFi signal strength
+- Use 5GHz WiFi if available
+</details>
 
-**IP not detected:**
-- Script assumes WiFi interface is `wlan0`
-- Check: `adb shell ip addr`
-- May need manual connection
+<details>
+<summary><b>Multiple devices</b></summary>
 
-**Multiple devices:**
 - Use: `scrcpy-smart --list` to see all
 - Use: `scrcpy-smart --select` to choose
+</details>
+
+## 📚 Documentation
+
+- [Wiki](https://github.com/tareq-alomari/scrcpy-smart/wiki) - Detailed documentation
+- [FAQ](https://github.com/tareq-alomari/scrcpy-smart/wiki/FAQ) - Frequently asked questions
+- [Troubleshooting](https://github.com/tareq-alomari/scrcpy-smart/wiki/Troubleshooting) - Common issues
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing`)
+5. Open a Pull Request
 
 ## 📄 License
 
@@ -148,47 +178,34 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Credits
 
-- [scrcpy](https://github.com/Genymobile/scrcpy) by Genymobile
-- Developed for Flutter/mobile developers
+- [scrcpy](https://github.com/Genymobile/scrcpy) by Genymobile - The amazing screen mirroring tool
+- Developed by [Tareq Alomari](https://github.com/tareq-alomari)
 
 ## 💡 Use Cases
 
-- Flutter development with hot reload
-- Mobile app testing
-- Screen recording/streaming
-- Remote device control
-- Wireless debugging sessions
-- Game streaming
-- Presentations and demos
+- 📱 Flutter/React Native development with hot reload
+- 🧪 Mobile app testing and debugging
+- 🎥 Screen recording and streaming
+- 🎮 Mobile gaming on PC
+- 🖥️ Remote device control
+- 📊 Presentations and demos
 
-## 🔧 Advanced Usage
+## ⭐ Star History
 
-### Custom scrcpy options
+[![Star History Chart](https://api.star-history.com/svg?repos=tareq-alomari/scrcpy-smart&type=Date)](https://star-history.com/#tareq-alomari/scrcpy-smart&Date)
 
-Pass additional options by editing the script:
+## 📊 Stats
 
-```bash
-scrcpy -s "$IP:5555" \
-  --max-size 1024 \
-  --bit-rate 8M \
-  --max-fps 60 \
-  --turn-screen-off \
-  --stay-awake
-```
+![GitHub stars](https://img.shields.io/github/stars/tareq-alomari/scrcpy-smart?style=social)
+![GitHub forks](https://img.shields.io/github/forks/tareq-alomari/scrcpy-smart?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/tareq-alomari/scrcpy-smart?style=social)
 
-### Multiple devices workflow
+---
 
-```bash
-# List devices
-scrcpy-smart --list
+<div align="center">
 
-# Select specific device
-scrcpy-smart --select
+**Made with ❤️ for mobile developers**
 
-# Reset and reconnect
-scrcpy-smart --reset
-```
+[Report Bug](https://github.com/tareq-alomari/scrcpy-smart/issues) · [Request Feature](https://github.com/tareq-alomari/scrcpy-smart/issues)
 
-## 📊 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+</div>

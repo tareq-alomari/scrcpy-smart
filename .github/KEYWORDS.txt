@@ -1,0 +1,2 @@
+# scrcpy-smart
+scrcpy wireless connection manager android adb wifi screen mirroring mobile development flutter react-native debugging remote-control cross-platform linux macos windows automation developer-tools productivity
