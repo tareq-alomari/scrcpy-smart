@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.4.0"
+VERSION="1.5.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -13,6 +13,8 @@ RESET="\e[0m"
 CONFIG="$HOME/.scrcpy-config"
 CONFIG_FILE="$HOME/.scrcpy-smart.conf"
 DEVICES_DIR="$HOME/.scrcpy-devices"
+LOG_FILE="$HOME/.scrcpy-smart.log"
+PID_FILE="$HOME/.scrcpy-smart.pid"
 
 # Create devices directory if not exists
 mkdir -p "$DEVICES_DIR"
@@ -27,6 +29,8 @@ DEFAULT_BITRATE="${DEFAULT_BITRATE:-8M}"
 DEFAULT_SIZE="${DEFAULT_SIZE:-1024}"
 DEFAULT_FPS="${DEFAULT_FPS:-60}"
 VERBOSE="${VERBOSE:-false}"
+AUTO_RECONNECT="${AUTO_RECONNECT:-false}"
+RECONNECT_INTERVAL="${RECONNECT_INTERVAL:-5}"
 
 # Detect OS
 OS="$(uname -s)"
@@ -57,6 +61,13 @@ show_help() {
     echo "  --devices        List all saved devices"
     echo "  --remove NAME    Remove saved device"
     echo ""
+    echo "Monitoring:"
+    echo "  --monitor        Monitor connection and auto-reconnect"
+    echo "  --daemon         Run as background daemon"
+    echo "  --stop           Stop daemon"
+    echo "  --status         Show daemon status"
+    echo "  --logs           Show connection logs"
+    echo ""
     echo "Profiles:"
     echo "  --profile gaming     High FPS, low latency (120fps, 720p, 4M)"
     echo "  --profile recording  High quality (60fps, 1920p, 16M)"
@@ -69,10 +80,9 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
-    echo "  $0 --save phone1            # Save current device as 'phone1'"
+    echo "  $0 --monitor                # Connect with auto-reconnect"
+    echo "  $0 --daemon                 # Run as background daemon"
     echo "  $0 --device phone1          # Connect to 'phone1'"
-    echo "  $0 --devices                # List saved devices"
-    echo "  $0 --profile gaming         # Connect with gaming profile"
     exit 0
 }
 
@@ -151,6 +161,121 @@ log_verbose() {
     if [ "$VERBOSE" = "true" ]; then
         echo -e "${BLUE}[DEBUG]${RESET} $1"
     fi
+}
+
+log_to_file() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+show_logs() {
+    if [ -f "$LOG_FILE" ]; then
+        echo -e "${CYAN}Connection Logs:${RESET}"
+        tail -50 "$LOG_FILE"
+    else
+        echo -e "${YELLOW}No logs found${RESET}"
+    fi
+    exit 0
+}
+
+check_daemon_status() {
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat "$PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Daemon running (PID: $pid)${RESET}"
+            exit 0
+        else
+            echo -e "${YELLOW}⚠️  Daemon not running (stale PID file)${RESET}"
+            rm "$PID_FILE"
+            exit 1
+        fi
+    else
+        echo -e "${RED}❌ Daemon not running${RESET}"
+        exit 1
+    fi
+}
+
+stop_daemon() {
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat "$PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            kill "$pid"
+            rm "$PID_FILE"
+            echo -e "${GREEN}✅ Daemon stopped${RESET}"
+        else
+            rm "$PID_FILE"
+            echo -e "${YELLOW}⚠️  Daemon was not running${RESET}"
+        fi
+    else
+        echo -e "${RED}❌ No daemon running${RESET}"
+    fi
+    exit 0
+}
+
+monitor_connection() {
+    local ip="$1"
+    
+    echo -e "${CYAN}🔍 Monitoring connection to $ip${RESET}"
+    echo -e "${YELLOW}Press Ctrl+C to stop${RESET}\n"
+    
+    log_to_file "Monitor started for $ip"
+    
+    while true; do
+        if ! adb devices | grep -q "$ip"; then
+            echo -e "${YELLOW}⚠️  Connection lost. Reconnecting...${RESET}"
+            log_to_file "Connection lost to $ip, attempting reconnect"
+            
+            adb connect "$ip:5555" &>/dev/null
+            sleep 2
+            
+            if adb devices | grep -q "$ip"; then
+                echo -e "${GREEN}✅ Reconnected!${RESET}"
+                log_to_file "Successfully reconnected to $ip"
+            else
+                echo -e "${RED}❌ Reconnect failed. Retrying in ${RECONNECT_INTERVAL}s...${RESET}"
+                log_to_file "Reconnect failed for $ip"
+            fi
+        else
+            log_verbose "Connection OK"
+        fi
+        
+        sleep "$RECONNECT_INTERVAL"
+    done
+}
+
+start_daemon() {
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat "$PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️  Daemon already running (PID: $pid)${RESET}"
+            exit 1
+        fi
+    fi
+    
+    if [ ! -f "$CONFIG" ]; then
+        echo -e "${RED}❌ No device configured. Connect first.${RESET}"
+        exit 1
+    fi
+    
+    local ip=$(cat "$CONFIG")
+    
+    echo -e "${CYAN}🚀 Starting daemon for $ip${RESET}"
+    log_to_file "Daemon started for $ip"
+    
+    # Run in background
+    nohup bash -c "
+        while true; do
+            if ! adb devices | grep -q '$ip'; then
+                adb connect '$ip:5555' &>/dev/null
+                echo \"[$(date '+%Y-%m-%d %H:%M:%S')] Reconnected to $ip\" >> '$LOG_FILE'
+            fi
+            sleep $RECONNECT_INTERVAL
+        done
+    " > /dev/null 2>&1 &
+    
+    echo $! > "$PID_FILE"
+    echo -e "${GREEN}✅ Daemon started (PID: $!)${RESET}"
+    echo -e "${CYAN}Use: $0 --stop to stop daemon${RESET}"
+    exit 0
 }
 
 # Profile configurations
@@ -276,6 +401,7 @@ PROFILE=""
 EXTRA_OPTS=""
 RECORD_FILE=""
 DEVICE_NAME=""
+MONITOR_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -298,6 +424,21 @@ while [[ $# -gt 0 ]]; do
             ;;
         --remove)
             remove_device "$2"
+            ;;
+        --monitor)
+            MONITOR_MODE=true
+            ;;
+        --daemon)
+            start_daemon
+            ;;
+        --stop)
+            stop_daemon
+            ;;
+        --status)
+            check_daemon_status
+            ;;
+        --logs)
+            show_logs
             ;;
         --profile)
             PROFILE="$2"
@@ -418,5 +559,17 @@ else
 fi
 
 log_verbose "Launching scrcpy with: --max-size $SCRCPY_SIZE --bit-rate $SCRCPY_BITRATE --max-fps $SCRCPY_FPS $SCRCPY_OPTS"
-scrcpy -s "$PHONE_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS 2>/dev/null || \
-scrcpy --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
+
+# Start monitor if requested
+if [ "$MONITOR_MODE" = "true" ]; then
+    # Launch scrcpy in background
+    scrcpy -s "$PHONE_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS &
+    SCRCPY_PID=$!
+    
+    # Monitor connection
+    monitor_connection "$PHONE_IP"
+else
+    # Normal mode
+    scrcpy -s "$PHONE_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS 2>/dev/null || \
+    scrcpy --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
+fi

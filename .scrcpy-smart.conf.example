@@ -9,5 +9,9 @@ DEFAULT_FPS=60          # Max FPS (30, 60, 120)
 # Behavior
 VERBOSE=false           # Enable verbose logging (true/false)
 
+# Auto-reconnect
+AUTO_RECONNECT=false    # Enable auto-reconnect (true/false)
+RECONNECT_INTERVAL=5    # Seconds between reconnect attempts
+
 # Profiles override these settings
 # Use: scrcpy-smart --profile gaming|recording|demo|battery

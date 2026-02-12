@@ -155,6 +155,39 @@ scrcpy-smart --remove myphone
 - Organize multiple tablets
 - Team device sharing
 
+### Auto-Reconnect & Monitoring
+
+Keep your connection alive automatically:
+
+```bash
+# Monitor connection (foreground)
+scrcpy-smart --monitor
+
+# Run as background daemon
+scrcpy-smart --daemon
+
+# Check daemon status
+scrcpy-smart --status
+
+# View connection logs
+scrcpy-smart --logs
+
+# Stop daemon
+scrcpy-smart --stop
+```
+
+**Features:**
+- Auto-reconnect on WiFi drops
+- Background monitoring
+- Connection event logging
+- Configurable reconnect interval
+
+**Perfect for:**
+- Long development sessions
+- Unstable WiFi
+- Always-on connections
+- Unattended setups
+
 ### First Time Setup
 
 1. Connect your Android device via USB

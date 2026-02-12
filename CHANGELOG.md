@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-02-13
+
+### Added
+- **Auto-Reconnect Monitoring**: Monitor connection and auto-reconnect on disconnect
+- **Background Daemon**: Run monitoring as background service
+- **Connection Logging**: Track all connection events
+- **Daemon Management**:
+  - `--monitor` - Monitor connection with auto-reconnect
+  - `--daemon` - Run as background daemon
+  - `--stop` - Stop daemon
+  - `--status` - Check daemon status
+  - `--logs` - View connection logs
+
+### Features
+- Automatic reconnection on WiFi drops
+- Configurable reconnect interval
+- Connection event logging to `~/.scrcpy-smart.log`
+- PID file management for daemon
+- Graceful daemon start/stop
+
+### Use Cases
+- Long development sessions without interruption
+- Unstable WiFi environments
+- Automatic recovery from connection drops
+- Background monitoring for always-on connections
+
 ## [1.4.0] - 2026-02-13
 
 ### Added
