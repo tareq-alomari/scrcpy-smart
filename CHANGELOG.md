@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-02-13
+
+### Added
+- **Multi-Device Management**: Save and manage multiple devices
+- **Device Nicknames**: Give friendly names to your devices
+- **Quick Device Switching**: Switch between saved devices instantly
+- **Device Management Commands**:
+  - `--save NAME` - Save current device with nickname
+  - `--device NAME` - Connect to saved device
+  - `--devices` - List all saved devices
+  - `--remove NAME` - Remove saved device
+
+### Features
+- Devices stored in `~/.scrcpy-devices/`
+- Easy switching between work phone, personal phone, tablet, etc.
+- Persistent device storage
+- Verbose logging for device operations
+
+### Use Cases
+- Manage multiple test devices
+- Switch between personal and work phones
+- Quick access to frequently used devices
+
 ## [1.3.0] - 2026-02-13
 
 ### Added

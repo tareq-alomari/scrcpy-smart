@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.3.0"
+VERSION="1.4.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -12,6 +12,10 @@ RESET="\e[0m"
 
 CONFIG="$HOME/.scrcpy-config"
 CONFIG_FILE="$HOME/.scrcpy-smart.conf"
+DEVICES_DIR="$HOME/.scrcpy-devices"
+
+# Create devices directory if not exists
+mkdir -p "$DEVICES_DIR"
 
 # Load config file if exists
 if [ -f "$CONFIG_FILE" ]; then
@@ -47,6 +51,12 @@ show_help() {
     echo "  -v, --version    Show version"
     echo "  -V, --verbose    Verbose mode"
     echo ""
+    echo "Multi-Device:"
+    echo "  --save NAME      Save current device with nickname"
+    echo "  --device NAME    Connect to saved device by nickname"
+    echo "  --devices        List all saved devices"
+    echo "  --remove NAME    Remove saved device"
+    echo ""
     echo "Profiles:"
     echo "  --profile gaming     High FPS, low latency (120fps, 720p, 4M)"
     echo "  --profile recording  High quality (60fps, 1920p, 16M)"
@@ -58,10 +68,11 @@ show_help() {
     echo "  --record FILE   Record to file"
     echo ""
     echo "Examples:"
-    echo "  $0                      # Connect to saved device"
-    echo "  $0 --profile gaming     # Connect with gaming profile"
-    echo "  $0 --record demo.mp4    # Connect and record"
-    echo "  $0 --reset              # Clear saved IP and reconnect"
+    echo "  $0                          # Connect to last device"
+    echo "  $0 --save phone1            # Save current device as 'phone1'"
+    echo "  $0 --device phone1          # Connect to 'phone1'"
+    echo "  $0 --devices                # List saved devices"
+    echo "  $0 --profile gaming         # Connect with gaming profile"
     exit 0
 }
 
@@ -180,10 +191,91 @@ apply_profile() {
     esac
 }
 
+# Multi-device functions
+save_device() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        echo -e "${RED}Error: Device name required${RESET}"
+        echo "Usage: $0 --save NAME"
+        exit 1
+    fi
+    
+    if [ ! -f "$CONFIG" ]; then
+        echo -e "${RED}Error: No device connected. Connect first, then save.${RESET}"
+        exit 1
+    fi
+    
+    local ip=$(cat "$CONFIG")
+    echo "$ip" > "$DEVICES_DIR/$name"
+    echo -e "${GREEN}✅ Device saved as '$name' ($ip)${RESET}"
+    exit 0
+}
+
+list_saved_devices() {
+    echo -e "${CYAN}Saved Devices:${RESET}"
+    
+    if [ ! "$(ls -A $DEVICES_DIR 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No saved devices${RESET}"
+        echo "Use: $0 --save NAME to save a device"
+        exit 0
+    fi
+    
+    for device in "$DEVICES_DIR"/*; do
+        if [ -f "$device" ]; then
+            local name=$(basename "$device")
+            local ip=$(cat "$device")
+            echo -e "  ${GREEN}$name${RESET} → $ip"
+        fi
+    done
+    exit 0
+}
+
+connect_to_device() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        echo -e "${RED}Error: Device name required${RESET}"
+        echo "Usage: $0 --device NAME"
+        exit 1
+    fi
+    
+    local device_file="$DEVICES_DIR/$name"
+    if [ ! -f "$device_file" ]; then
+        echo -e "${RED}Error: Device '$name' not found${RESET}"
+        echo "Available devices:"
+        list_saved_devices
+        exit 1
+    fi
+    
+    local ip=$(cat "$device_file")
+    echo "$ip" > "$CONFIG"
+    echo -e "${GREEN}✅ Switched to device '$name' ($ip)${RESET}"
+    log_verbose "Device file: $device_file"
+}
+
+remove_device() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        echo -e "${RED}Error: Device name required${RESET}"
+        echo "Usage: $0 --remove NAME"
+        exit 1
+    fi
+    
+    local device_file="$DEVICES_DIR/$name"
+    if [ ! -f "$device_file" ]; then
+        echo -e "${RED}Error: Device '$name' not found${RESET}"
+        exit 1
+    fi
+    
+    rm "$device_file"
+    echo -e "${GREEN}✅ Device '$name' removed${RESET}"
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
 RECORD_FILE=""
+DEVICE_NAME=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -194,6 +286,19 @@ while [[ $# -gt 0 ]]; do
         -l|--list) list_devices ;;
         -s|--select) select_device ;;
         -V|--verbose) VERBOSE=true ;;
+        --save)
+            save_device "$2"
+            ;;
+        --device)
+            DEVICE_NAME="$2"
+            shift
+            ;;
+        --devices)
+            list_saved_devices
+            ;;
+        --remove)
+            remove_device "$2"
+            ;;
         --profile)
             PROFILE="$2"
             shift
@@ -209,6 +314,11 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+# Switch to specific device if requested
+if [ -n "$DEVICE_NAME" ]; then
+    connect_to_device "$DEVICE_NAME"
+fi
 
 # Apply profile if specified
 if [ -n "$PROFILE" ]; then

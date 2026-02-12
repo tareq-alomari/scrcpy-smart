@@ -125,6 +125,36 @@ scrcpy-smart --record demo.mp4
 scrcpy-smart --profile gaming --fullscreen
 ```
 
+### Multi-Device Management
+
+Save and manage multiple devices with nicknames:
+
+```bash
+# Save current device
+scrcpy-smart --save myphone
+
+# Save another device
+scrcpy-smart --save tablet
+
+# List all saved devices
+scrcpy-smart --devices
+
+# Connect to specific device
+scrcpy-smart --device myphone
+
+# Connect with profile
+scrcpy-smart --device tablet --profile recording
+
+# Remove device
+scrcpy-smart --remove myphone
+```
+
+**Use Cases:**
+- Manage work and personal phones
+- Quick switch between test devices
+- Organize multiple tablets
+- Team device sharing
+
 ### First Time Setup
 
 1. Connect your Android device via USB
