@@ -188,6 +188,49 @@ scrcpy-smart --stop
 - Always-on connections
 - Unattended setups
 
+## 🖥️ GUI Mode (Optional)
+
+For users who prefer a graphical interface:
+
+### Installation
+
+```bash
+# Install zenity
+sudo apt install zenity  # Ubuntu/Debian
+brew install zenity      # macOS
+```
+
+### Usage
+
+```bash
+# Launch GUI
+./scrcpy-smart-gui.sh
+```
+
+### Features
+
+- 📱 Visual device selection
+- 🎮 Profile chooser with descriptions
+- 💾 Device management (save/remove)
+- ⚙️ Daemon control panel
+- 📝 Settings editor
+- 📊 Connection logs viewer
+- ℹ️ About dialog
+
+### Desktop Integration
+
+```bash
+# Install desktop entry
+cp scrcpy-smart.desktop ~/.local/share/applications/
+
+# Update paths in desktop file
+sed -i "s|/home/tareq|$HOME|g" ~/.local/share/applications/scrcpy-smart.desktop
+
+# Now available in application menu
+```
+
+**Screenshots coming soon!**
+
 ### First Time Setup
 
 1. Connect your Android device via USB

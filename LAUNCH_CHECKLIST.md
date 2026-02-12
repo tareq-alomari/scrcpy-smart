@@ -218,4 +218,34 @@ Track these:
 
 ---
 
+## 🖥️ GUI Mode (Optional)
+
+For users who prefer graphical interface:
+
+```bash
+# Install zenity (if not installed)
+sudo apt install zenity  # Ubuntu/Debian
+brew install zenity      # macOS
+
+# Launch GUI
+./scrcpy-smart-gui.sh
+```
+
+**GUI Features:**
+- Visual device selection
+- Profile chooser
+- Device management
+- Daemon control
+- Settings editor
+- Connection logs viewer
+
+**Desktop Integration:**
+```bash
+# Install desktop entry
+cp scrcpy-smart.desktop ~/.local/share/applications/
+# Now available in application menu
+```
+
+---
+
 Good luck with the launch! 🚀🔥

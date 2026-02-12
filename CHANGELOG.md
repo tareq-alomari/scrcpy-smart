@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-02-13
+
+### Added
+- **GUI Mode**: Optional graphical interface using zenity
+- **Desktop Integration**: .desktop file for application menu
+- **Visual Device Management**: GUI for all operations
+- **GUI Features**:
+  - Device selection dialog
+  - Profile chooser with descriptions
+  - Device management (save/remove)
+  - Daemon control panel
+  - Settings editor
+  - Connection logs viewer
+  - About dialog
+
+### Changed
+- Major version bump for GUI addition
+- Enhanced user experience for non-CLI users
+- Desktop environment integration
+
+### Features
+- Launch with `scrcpy-smart-gui.sh`
+- Install to application menu
+- Visual feedback for all operations
+- No terminal required for basic usage
+
 ## [1.5.0] - 2026-02-13
 
 ### Added

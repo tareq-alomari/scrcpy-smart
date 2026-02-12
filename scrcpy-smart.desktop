@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=2.0.0
+Type=Application
+Name=Scrcpy Smart Connect
+Comment=Smart wireless connection manager for scrcpy
+Exec=/home/tareq/scrcpy-smart/scrcpy-smart-gui.sh
+Icon=phone
+Terminal=false
+Categories=Development;Utility;
+Keywords=scrcpy;android;adb;wireless;screen-mirroring;
