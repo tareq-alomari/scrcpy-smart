@@ -1,14 +1,28 @@
 #!/bin/bash
 
-VERSION="1.1.0"
+VERSION="1.3.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
 YELLOW="\e[33m"
 CYAN="\e[36m"
+BLUE="\e[34m"
+MAGENTA="\e[35m"
 RESET="\e[0m"
 
 CONFIG="$HOME/.scrcpy-config"
+CONFIG_FILE="$HOME/.scrcpy-smart.conf"
+
+# Load config file if exists
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
+# Default settings (can be overridden by config file)
+DEFAULT_BITRATE="${DEFAULT_BITRATE:-8M}"
+DEFAULT_SIZE="${DEFAULT_SIZE:-1024}"
+DEFAULT_FPS="${DEFAULT_FPS:-60}"
+VERBOSE="${VERBOSE:-false}"
 
 # Detect OS
 OS="$(uname -s)"
@@ -31,11 +45,23 @@ show_help() {
     echo "  -l, --list       List all connected devices"
     echo "  -s, --select     Select device manually"
     echo "  -v, --version    Show version"
+    echo "  -V, --verbose    Verbose mode"
+    echo ""
+    echo "Profiles:"
+    echo "  --profile gaming     High FPS, low latency (120fps, 720p, 4M)"
+    echo "  --profile recording  High quality (60fps, 1920p, 16M)"
+    echo "  --profile demo       Borderless, always-on-top"
+    echo "  --profile battery    Battery saver (30fps, 720p, 2M)"
+    echo ""
+    echo "Quick Options:"
+    echo "  --fullscreen    Launch in fullscreen"
+    echo "  --record FILE   Record to file"
     echo ""
     echo "Examples:"
-    echo "  $0              # Connect to saved device"
-    echo "  $0 --reset      # Clear saved IP and reconnect"
-    echo "  $0 --list       # Show all devices"
+    echo "  $0                      # Connect to saved device"
+    echo "  $0 --profile gaming     # Connect with gaming profile"
+    echo "  $0 --record demo.mp4    # Connect and record"
+    echo "  $0 --reset              # Clear saved IP and reconnect"
     exit 0
 }
 
@@ -50,8 +76,22 @@ show_config() {
         echo -e "${CYAN}Current Configuration:${RESET}"
         echo "Saved IP: $(cat $CONFIG)"
         echo "Config file: $CONFIG"
+        echo ""
     else
-        echo -e "${YELLOW}No configuration found${RESET}"
+        echo -e "${YELLOW}No saved IP found${RESET}"
+        echo ""
+    fi
+    
+    if [ -f "$CONFIG_FILE" ]; then
+        echo -e "${CYAN}Settings (from $CONFIG_FILE):${RESET}"
+        cat "$CONFIG_FILE"
+    else
+        echo -e "${CYAN}Default Settings:${RESET}"
+        echo "DEFAULT_BITRATE=$DEFAULT_BITRATE"
+        echo "DEFAULT_SIZE=$DEFAULT_SIZE"
+        echo "DEFAULT_FPS=$DEFAULT_FPS"
+        echo ""
+        echo -e "${YELLOW}Create $CONFIG_FILE to customize${RESET}"
     fi
     exit 0
 }
@@ -96,7 +136,55 @@ select_device() {
     exit 0
 }
 
+log_verbose() {
+    if [ "$VERBOSE" = "true" ]; then
+        echo -e "${BLUE}[DEBUG]${RESET} $1"
+    fi
+}
+
+# Profile configurations
+apply_profile() {
+    case "$1" in
+        gaming)
+            PROFILE_SIZE=720
+            PROFILE_BITRATE=4M
+            PROFILE_FPS=120
+            PROFILE_OPTS="--display-buffer=50"
+            echo -e "${MAGENTA}🎮 Gaming Profile${RESET}"
+            ;;
+        recording)
+            PROFILE_SIZE=1920
+            PROFILE_BITRATE=16M
+            PROFILE_FPS=60
+            PROFILE_OPTS=""
+            echo -e "${MAGENTA}🎥 Recording Profile${RESET}"
+            ;;
+        demo)
+            PROFILE_SIZE=1024
+            PROFILE_BITRATE=8M
+            PROFILE_FPS=60
+            PROFILE_OPTS="--window-borderless --always-on-top"
+            echo -e "${MAGENTA}📊 Demo Profile${RESET}"
+            ;;
+        battery)
+            PROFILE_SIZE=720
+            PROFILE_BITRATE=2M
+            PROFILE_FPS=30
+            PROFILE_OPTS="--turn-screen-off"
+            echo -e "${MAGENTA}🔋 Battery Saver Profile${RESET}"
+            ;;
+        *)
+            echo -e "${RED}Unknown profile: $1${RESET}"
+            exit 1
+            ;;
+    esac
+}
+
 # Parse arguments
+PROFILE=""
+EXTRA_OPTS=""
+RECORD_FILE=""
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
@@ -105,25 +193,65 @@ while [[ $# -gt 0 ]]; do
         -r|--reset) reset_config ;;
         -l|--list) list_devices ;;
         -s|--select) select_device ;;
+        -V|--verbose) VERBOSE=true ;;
+        --profile)
+            PROFILE="$2"
+            shift
+            ;;
+        --fullscreen)
+            EXTRA_OPTS="$EXTRA_OPTS --fullscreen"
+            ;;
+        --record)
+            RECORD_FILE="$2"
+            shift
+            ;;
         *) echo "Unknown option: $1"; show_help ;;
     esac
     shift
 done
 
+# Apply profile if specified
+if [ -n "$PROFILE" ]; then
+    apply_profile "$PROFILE"
+    SCRCPY_SIZE="${PROFILE_SIZE:-$DEFAULT_SIZE}"
+    SCRCPY_BITRATE="${PROFILE_BITRATE:-$DEFAULT_BITRATE}"
+    SCRCPY_FPS="${PROFILE_FPS:-$DEFAULT_FPS}"
+    SCRCPY_OPTS="$PROFILE_OPTS"
+else
+    SCRCPY_SIZE="$DEFAULT_SIZE"
+    SCRCPY_BITRATE="$DEFAULT_BITRATE"
+    SCRCPY_FPS="$DEFAULT_FPS"
+    SCRCPY_OPTS=""
+fi
+
+# Add recording if specified
+if [ -n "$RECORD_FILE" ]; then
+    SCRCPY_OPTS="$SCRCPY_OPTS --record=$RECORD_FILE"
+    echo -e "${MAGENTA}🎥 Recording to: $RECORD_FILE${RESET}"
+fi
+
+# Add extra options
+SCRCPY_OPTS="$SCRCPY_OPTS $EXTRA_OPTS"
+
 echo -e "${CYAN}🚀 Scrcpy Smart Connect v$VERSION${RESET}"
 echo -e "${CYAN}OS: $OS_TYPE${RESET}\n"
+
+log_verbose "Config file: $CONFIG_FILE"
+log_verbose "Settings: Size=$SCRCPY_SIZE, Bitrate=$SCRCPY_BITRATE, FPS=$SCRCPY_FPS"
 
 # Try wireless first
 if [ -f "$CONFIG" ]; then
     SAVED_IP=$(cat "$CONFIG")
     echo -e "${YELLOW}📡 Trying saved connection: $SAVED_IP${RESET}"
+    log_verbose "Connecting to $SAVED_IP:5555"
     
     adb connect "$SAVED_IP:5555" &>/dev/null
     sleep 1
     
     if adb devices | grep -q "$SAVED_IP"; then
         echo -e "${GREEN}✅ Connected wirelessly!${RESET}"
-        scrcpy -s "$SAVED_IP:5555" --max-size 1024 --bit-rate 8M --max-fps 60
+        log_verbose "Launching scrcpy with: --max-size $SCRCPY_SIZE --bit-rate $SCRCPY_BITRATE --max-fps $SCRCPY_FPS $SCRCPY_OPTS"
+        scrcpy -s "$SAVED_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
         exit 0
     fi
     
@@ -179,4 +307,6 @@ else
     echo -e "${YELLOW}⚠️  Using USB connection${RESET}"
 fi
 
-scrcpy -s "$PHONE_IP:5555" --max-size 1024 --bit-rate 8M --max-fps 60 2>/dev/null || scrcpy --max-size 1024 --bit-rate 8M --max-fps 60
+log_verbose "Launching scrcpy with: --max-size $SCRCPY_SIZE --bit-rate $SCRCPY_BITRATE --max-fps $SCRCPY_FPS $SCRCPY_OPTS"
+scrcpy -s "$PHONE_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS 2>/dev/null || \
+scrcpy --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS

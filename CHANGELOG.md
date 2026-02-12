@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-02-13
+
+### Added
+- **Device Profiles**: Gaming, Recording, Demo, Battery Saver
+- **Config File Support**: `~/.scrcpy-smart.conf` for custom defaults
+- **Verbose Mode**: `-V` or `--verbose` for debug logging
+- **Quick Options**: `--fullscreen` and `--record FILE`
+- **Better Help**: Detailed help with examples and profiles
+
+### Changed
+- Dynamic scrcpy parameters based on profile/config
+- Improved logging with color-coded messages
+- Better error handling and user feedback
+
+### Features
+- Gaming profile: 120fps, 720p, 4M bitrate, low latency
+- Recording profile: 60fps, 1920p, 16M bitrate, high quality
+- Demo profile: Borderless, always-on-top
+- Battery saver profile: 30fps, 720p, 2M bitrate, screen off
+
 ## [1.2.0] - 2026-02-13
 
 ### Added

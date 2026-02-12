@@ -91,6 +91,38 @@ scrcpy-smart --config    # Show current config
 scrcpy-smart --reset     # Reset saved IP
 scrcpy-smart --list      # List all devices
 scrcpy-smart --select    # Select device manually
+scrcpy-smart --verbose   # Verbose mode
+```
+
+### Device Profiles
+
+Choose optimized settings for different use cases:
+
+```bash
+# Gaming - High FPS, low latency
+scrcpy-smart --profile gaming
+
+# Recording - High quality
+scrcpy-smart --profile recording
+
+# Demo/Presentation - Borderless, always-on-top
+scrcpy-smart --profile demo
+
+# Battery Saver - Low power consumption
+scrcpy-smart --profile battery
+```
+
+### Quick Options
+
+```bash
+# Fullscreen mode
+scrcpy-smart --fullscreen
+
+# Record to file
+scrcpy-smart --record demo.mp4
+
+# Combine options
+scrcpy-smart --profile gaming --fullscreen
 ```
 
 ### First Time Setup
@@ -110,6 +142,28 @@ The script will:
 Simply run `scrcpy-smart` or `phone` - **no USB cable needed!**
 
 ## ⚙️ Configuration
+
+### Config File
+
+Create `~/.scrcpy-smart.conf` to customize defaults:
+
+```bash
+# Copy example config
+cp .scrcpy-smart.conf.example ~/.scrcpy-smart.conf
+
+# Edit settings
+nano ~/.scrcpy-smart.conf
+```
+
+**Example config:**
+```bash
+DEFAULT_BITRATE=8M      # Video bitrate
+DEFAULT_SIZE=1024       # Max resolution
+DEFAULT_FPS=60          # Max FPS
+VERBOSE=false           # Debug logging
+```
+
+### Device IP
 
 Configuration is saved in `~/.scrcpy-config`
 

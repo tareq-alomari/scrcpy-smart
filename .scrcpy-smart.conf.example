@@ -1,0 +1,13 @@
+# Scrcpy Smart Connect Configuration File
+# Edit this file to customize default settings
+
+# Default scrcpy settings
+DEFAULT_BITRATE=8M      # Video bitrate (2M, 4M, 8M, 16M)
+DEFAULT_SIZE=1024       # Max resolution (720, 1024, 1920)
+DEFAULT_FPS=60          # Max FPS (30, 60, 120)
+
+# Behavior
+VERBOSE=false           # Enable verbose logging (true/false)
+
+# Profiles override these settings
+# Use: scrcpy-smart --profile gaming|recording|demo|battery
