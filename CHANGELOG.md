@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-02-13
+
+### Added
+- GitHub Actions CI/CD workflows (automated testing and releases)
+- Multilingual documentation (Arabic, Spanish, Chinese)
+- SEO optimization with badges and keywords
+- Issue templates (bug report, feature request)
+- Contributing guidelines
+- Enhanced README with better formatting and sections
+- Star history chart
+- Community health files
+
+### Improved
+- README structure with collapsible sections
+- Documentation organization
+- Project discoverability
+
 ## [1.1.0] - 2026-02-13
 
 ### Added
