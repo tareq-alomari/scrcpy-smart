@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-02-13
+
+### Added
+- **Better Error Messages**: Improved error handling with helpful suggestions
+- **New Profiles**: 
+  - Development profile (`--profile dev`)
+  - Presentation profile (`--profile presentation`)
+- **Error Logging**: Automatic error logging to help troubleshooting
+
+### Enhanced
+- Error messages now suggest solutions
+- Profile system expanded with more use cases
+- Better user guidance on failures
+
+### Use Cases
+- Development: Stay-awake mode for coding sessions
+- Presentation: Fullscreen borderless for demos
+
 ## [2.1.0] - 2026-02-13
 
 ### Added

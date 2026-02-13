@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.1.0"
+VERSION="2.2.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -32,6 +32,7 @@ DEFAULT_FPS="${DEFAULT_FPS:-60}"
 VERBOSE="${VERBOSE:-false}"
 AUTO_RECONNECT="${AUTO_RECONNECT:-false}"
 RECONNECT_INTERVAL="${RECONNECT_INTERVAL:-5}"
+ERROR_LOG="${ERROR_LOG:-true}"
 
 # Detect OS
 OS="$(uname -s)"
@@ -41,6 +42,30 @@ case "$OS" in
     CYGWIN*|MINGW*|MSYS*) OS_TYPE="Windows";;
     *)          OS_TYPE="Unknown";;
 esac
+
+# Error handling function
+handle_error() {
+    local error_msg="$1"
+    local error_code="${2:-1}"
+    
+    echo -e "${RED}❌ Error: $error_msg${RESET}" >&2
+    [ "$ERROR_LOG" = "true" ] && echo "[$(date)] ERROR: $error_msg" >> "$LOG_FILE"
+    
+    # Suggest solutions
+    case "$error_msg" in
+        *"No device"*) 
+            echo -e "${YELLOW}💡 Try: Connect USB or check WiFi${RESET}"
+            ;;
+        *"connection"*|*"connect"*)
+            echo -e "${YELLOW}💡 Try: scrcpy-smart --reset${RESET}"
+            ;;
+        *"IP"*)
+            echo -e "${YELLOW}💡 Try: scrcpy-smart --ip YOUR_IP${RESET}"
+            ;;
+    esac
+    
+    exit "$error_code"
+}
 
 show_help() {
     echo -e "${CYAN}Scrcpy Smart Connect v$VERSION${RESET}"
@@ -76,6 +101,8 @@ show_help() {
     echo "  --profile recording  High quality (60fps, 1920p, 16M)"
     echo "  --profile demo       Borderless, always-on-top"
     echo "  --profile battery    Battery saver (30fps, 720p, 2M)"
+    echo "  --profile dev        Development (60fps, 1024p, stay-awake)"
+    echo "  --profile presentation  Fullscreen presentation mode"
     echo ""
     echo "Quick Options:"
     echo "  --fullscreen    Launch in fullscreen"
@@ -320,9 +347,22 @@ apply_profile() {
             PROFILE_OPTS="--turn-screen-off"
             echo -e "${MAGENTA}🔋 Battery Saver Profile${RESET}"
             ;;
+        dev)
+            PROFILE_SIZE=1024
+            PROFILE_BITRATE=6M
+            PROFILE_FPS=60
+            PROFILE_OPTS="--stay-awake"
+            echo -e "${MAGENTA}💻 Development Profile${RESET}"
+            ;;
+        presentation)
+            PROFILE_SIZE=1280
+            PROFILE_BITRATE=10M
+            PROFILE_FPS=60
+            PROFILE_OPTS="--window-borderless --always-on-top --fullscreen"
+            echo -e "${MAGENTA}🎤 Presentation Profile${RESET}"
+            ;;
         *)
-            echo -e "${RED}Unknown profile: $1${RESET}"
-            exit 1
+            handle_error "Unknown profile: $1. Available: gaming, recording, demo, battery, dev, presentation"
             ;;
     esac
 }
@@ -612,9 +652,7 @@ adb start-server &>/dev/null
 DEVICE=$(adb devices | awk 'NR==2 {print $1}')
 
 if [ -z "$DEVICE" ]; then
-    echo -e "${RED}❌ No device found via USB or WiFi${RESET}"
-    echo "📌 Connect via USB or enable Wireless Debugging"
-    exit 1
+    handle_error "No device found via USB or WiFi"
 fi
 
 echo -e "${GREEN}✅ Device found: $DEVICE${RESET}"
