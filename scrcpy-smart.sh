@@ -13,11 +13,14 @@ RESET="\e[0m"
 CONFIG="$HOME/.scrcpy-config"
 CONFIG_FILE="$HOME/.scrcpy-smart.conf"
 DEVICES_DIR="$HOME/.scrcpy-devices"
+PROFILES_DIR="$HOME/.scrcpy-profiles"
+ALIASES_DIR="$HOME/.scrcpy-aliases"
 LOG_FILE="$HOME/.scrcpy-smart.log"
 PID_FILE="$HOME/.scrcpy-smart.pid"
 ADB_PORT="${ADB_PORT:-5555}"
 
-# Create devices directory if not exists
+# Create directories if not exist
+mkdir -p "$DEVICES_DIR" "$PROFILES_DIR" "$ALIASES_DIR"
 mkdir -p "$DEVICES_DIR"
 
 # Load config file if exists
@@ -120,6 +123,20 @@ show_help() {
     echo "  --reboot        Reboot device"
     echo "  --install FILE  Install APK"
     echo "  --shell         Open ADB shell"
+    echo ""
+    echo "Config Profiles:"
+    echo "  --save-profile NAME  Save current settings as profile"
+    echo "  --load-profile NAME  Load saved profile"
+    echo "  --list-profiles      List all saved profiles"
+    echo ""
+    echo "Backup/Restore:"
+    echo "  --backup DIR    Backup device data"
+    echo "  --restore DIR   Restore device data"
+    echo ""
+    echo "Aliases:"
+    echo "  --alias NAME CMD    Create command alias"
+    echo "  --run-alias NAME    Run saved alias"
+    echo "  --list-aliases      List all aliases"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -603,6 +620,124 @@ quick_shell() {
     exit 0
 }
 
+save_config_profile() {
+    local name="$1"
+    [ -z "$name" ] && handle_error "Profile name required"
+    
+    local profile_file="$PROFILES_DIR/$name"
+    cat > "$profile_file" << EOF
+BITRATE=$DEFAULT_BITRATE
+SIZE=$DEFAULT_SIZE
+FPS=$DEFAULT_FPS
+PROFILE=${PROFILE:-default}
+EOF
+    
+    echo -e "${GREEN}✅ Profile '$name' saved${RESET}"
+    exit 0
+}
+
+load_config_profile() {
+    local name="$1"
+    [ -z "$name" ] && handle_error "Profile name required"
+    
+    local profile_file="$PROFILES_DIR/$name"
+    [ ! -f "$profile_file" ] && handle_error "Profile '$name' not found"
+    
+    source "$profile_file"
+    DEFAULT_BITRATE=$BITRATE
+    DEFAULT_SIZE=$SIZE
+    DEFAULT_FPS=$FPS
+    
+    echo -e "${GREEN}✅ Profile '$name' loaded${RESET}"
+}
+
+list_config_profiles() {
+    echo -e "${CYAN}📋 Saved Profiles:${RESET}\n"
+    
+    if [ ! "$(ls -A $PROFILES_DIR 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No profiles saved${RESET}"
+        exit 0
+    fi
+    
+    for profile in "$PROFILES_DIR"/*; do
+        local name=$(basename "$profile")
+        echo -e "${GREEN}• $name${RESET}"
+        source "$profile"
+        echo -e "  Size: $SIZE, Bitrate: $BITRATE, FPS: $FPS"
+    done
+    
+    exit 0
+}
+
+backup_device() {
+    local dir="${1:-backup_$(date +%Y%m%d_%H%M%S)}"
+    mkdir -p "$dir"
+    
+    echo -e "${CYAN}💾 Backing up device to $dir...${RESET}"
+    
+    adb backup -apk -shared -all -f "$dir/backup.ab"
+    
+    echo -e "${GREEN}✅ Backup complete: $dir${RESET}"
+    exit 0
+}
+
+restore_device() {
+    local dir="$1"
+    [ -z "$dir" ] && handle_error "Backup directory required"
+    [ ! -d "$dir" ] && handle_error "Directory not found: $dir"
+    
+    local backup_file="$dir/backup.ab"
+    [ ! -f "$backup_file" ] && handle_error "Backup file not found"
+    
+    echo -e "${YELLOW}⚠️  Restoring will overwrite device data${RESET}"
+    echo -e "${CYAN}📦 Restoring from $dir...${RESET}"
+    
+    adb restore "$backup_file"
+    
+    echo -e "${GREEN}✅ Restore complete${RESET}"
+    exit 0
+}
+
+create_alias() {
+    local name="$1"
+    local cmd="$2"
+    [ -z "$name" ] || [ -z "$cmd" ] && handle_error "Usage: --alias NAME COMMAND"
+    
+    echo "$cmd" > "$ALIASES_DIR/$name"
+    echo -e "${GREEN}✅ Alias '$name' created${RESET}"
+    exit 0
+}
+
+run_alias() {
+    local name="$1"
+    [ -z "$name" ] && handle_error "Alias name required"
+    
+    local alias_file="$ALIASES_DIR/$name"
+    [ ! -f "$alias_file" ] && handle_error "Alias '$name' not found"
+    
+    local cmd=$(cat "$alias_file")
+    echo -e "${CYAN}▶️  Running: $cmd${RESET}"
+    eval "$cmd"
+    exit 0
+}
+
+list_aliases() {
+    echo -e "${CYAN}📋 Saved Aliases:${RESET}\n"
+    
+    if [ ! "$(ls -A $ALIASES_DIR 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No aliases saved${RESET}"
+        exit 0
+    fi
+    
+    for alias_file in "$ALIASES_DIR"/*; do
+        local name=$(basename "$alias_file")
+        local cmd=$(cat "$alias_file")
+        echo -e "${GREEN}• $name${RESET}: $cmd"
+    done
+    
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -671,6 +806,30 @@ while [[ $# -gt 0 ]]; do
             ;;
         --shell)
             quick_shell
+            ;;
+        --save-profile)
+            save_config_profile "$2"
+            ;;
+        --load-profile)
+            load_config_profile "$2"
+            ;;
+        --list-profiles)
+            list_config_profiles
+            ;;
+        --backup)
+            backup_device "$2"
+            ;;
+        --restore)
+            restore_device "$2"
+            ;;
+        --alias)
+            create_alias "$2" "$3"
+            ;;
+        --run-alias)
+            run_alias "$2"
+            ;;
+        --list-aliases)
+            list_aliases
             ;;
         --profile)
             PROFILE="$2"

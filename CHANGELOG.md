@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
   - Reboot device (`--reboot`)
   - Install APK (`--install FILE`)
   - Open shell (`--shell`)
+- **Config Profiles**: Save and load custom settings
+  - Save profile (`--save-profile NAME`)
+  - Load profile (`--load-profile NAME`)
+  - List profiles (`--list-profiles`)
+- **Backup/Restore**: Device data management
+  - Backup (`--backup DIR`)
+  - Restore (`--restore DIR`)
+- **Command Aliases**: Create custom shortcuts
+  - Create alias (`--alias NAME CMD`)
+  - Run alias (`--run-alias NAME`)
+  - List aliases (`--list-aliases`)
 - **Error Logging**: Automatic error logging to help troubleshooting
 
 ### Enhanced
@@ -23,6 +34,8 @@ All notable changes to this project will be documented in this file.
 - Better user guidance on failures
 - Network scanning capabilities
 - Device performance monitoring
+- Custom configuration management
+- Flexible command system
 
 ### Use Cases
 - Development: Stay-awake mode for coding sessions
@@ -30,6 +43,8 @@ All notable changes to this project will be documented in this file.
 - Network: Find devices on local network
 - Monitoring: Check device performance
 - Quick actions: Fast device management
+- Backup: Protect device data
+- Automation: Create custom workflows with aliases
 
 ## [2.1.0] - 2026-02-13
 
