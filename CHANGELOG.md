@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2026-02-13
+
+### Added
+- **Batch Operations**: Run commands on multiple devices
+  - Batch command execution (`--batch CMD`)
+  - Push files to all devices (`--push FILE`)
+  - Pull files from all devices (`--pull FILE`)
+- **Clipboard Sync**: Copy/paste between PC and device
+  - Copy to device (`--copy TEXT`)
+  - Paste from device (`--paste`)
+
+### Enhanced
+- Multi-device management
+- File transfer capabilities
+- Clipboard integration
+
+### Use Cases
+- Deploy apps to multiple test devices
+- Collect logs from all devices
+- Share clipboard content
+- Batch configuration updates
+
 ## [2.4.0] - 2026-02-13
 
 ### Added

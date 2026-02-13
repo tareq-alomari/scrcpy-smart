@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.4.0"
+VERSION="2.5.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -171,6 +171,15 @@ show_help() {
     echo "Advanced:"
     echo "  --watch             Watch for device and auto-connect"
     echo "  --timeout SEC       Connection timeout (default: 30)"
+    echo ""
+    echo "Batch Operations:"
+    echo "  --batch CMD         Run command on all saved devices"
+    echo "  --push FILE         Push file to all devices"
+    echo "  --pull FILE         Pull file from all devices"
+    echo ""
+    echo "Clipboard:"
+    echo "  --copy TEXT         Copy text to device clipboard"
+    echo "  --paste             Get text from device clipboard"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -869,6 +878,93 @@ watch_mode() {
     exit 1
 }
 
+batch_command() {
+    local cmd="$1"
+    [ -z "$cmd" ] && handle_error "Command required"
+    
+    echo -e "${CYAN}🔄 Running on all devices...${RESET}\n"
+    
+    local count=0
+    for device_file in "$DEVICES_DIR"/*; do
+        [ ! -f "$device_file" ] && continue
+        
+        local name=$(basename "$device_file")
+        local ip=$(cat "$device_file")
+        
+        echo -e "${YELLOW}▶️  $name ($ip)${RESET}"
+        adb -s "$ip:$ADB_PORT" shell "$cmd"
+        ((count++))
+        echo ""
+    done
+    
+    echo -e "${GREEN}✅ Completed on $count device(s)${RESET}"
+    exit 0
+}
+
+batch_push() {
+    local file="$1"
+    [ ! -f "$file" ] && handle_error "File not found: $file"
+    
+    echo -e "${CYAN}📤 Pushing to all devices...${RESET}\n"
+    
+    local count=0
+    for device_file in "$DEVICES_DIR"/*; do
+        [ ! -f "$device_file" ] && continue
+        
+        local name=$(basename "$device_file")
+        local ip=$(cat "$device_file")
+        
+        echo -e "${YELLOW}▶️  $name ($ip)${RESET}"
+        adb -s "$ip:$ADB_PORT" push "$file" /sdcard/
+        ((count++))
+    done
+    
+    echo -e "${GREEN}✅ Pushed to $count device(s)${RESET}"
+    exit 0
+}
+
+batch_pull() {
+    local file="$1"
+    [ -z "$file" ] && handle_error "File path required"
+    
+    echo -e "${CYAN}📥 Pulling from all devices...${RESET}\n"
+    
+    local count=0
+    for device_file in "$DEVICES_DIR"/*; do
+        [ ! -f "$device_file" ] && continue
+        
+        local name=$(basename "$device_file")
+        local ip=$(cat "$device_file")
+        
+        echo -e "${YELLOW}▶️  $name ($ip)${RESET}"
+        adb -s "$ip:$ADB_PORT" pull "$file" "./${name}_$(basename $file)"
+        ((count++))
+    done
+    
+    echo -e "${GREEN}✅ Pulled from $count device(s)${RESET}"
+    exit 0
+}
+
+copy_to_device() {
+    local text="$1"
+    [ -z "$text" ] && handle_error "Text required"
+    
+    adb shell "am broadcast -a clipper.set -e text '$text'"
+    echo -e "${GREEN}✅ Copied to device${RESET}"
+    exit 0
+}
+
+paste_from_device() {
+    local text=$(adb shell "am broadcast -a clipper.get" 2>/dev/null | grep -oP 'data=".*?"' | cut -d'"' -f2)
+    
+    if [ -n "$text" ]; then
+        echo "$text"
+    else
+        echo -e "${YELLOW}Clipboard empty or not accessible${RESET}"
+    fi
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -985,6 +1081,21 @@ while [[ $# -gt 0 ]]; do
             ;;
         --timeout)
             shift
+            ;;
+        --batch)
+            batch_command "$2"
+            ;;
+        --push)
+            batch_push "$2"
+            ;;
+        --pull)
+            batch_pull "$2"
+            ;;
+        --copy)
+            copy_to_device "$2"
+            ;;
+        --paste)
+            paste_from_device
             ;;
         --profile)
             PROFILE="$2"
