@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2026-02-13 🎉
+
+### Added - Major Release
+- **QR Code Pairing**: Quick device pairing with QR codes
+  - Generate QR code (`--qr`)
+  - Pair with code (`--pair IP`)
+- **Web Interface**: Simple web-based control panel
+  - Launch with `./scrcpy-web.sh`
+  - Control from browser
+  - Quick actions and profiles
+- **Plugin System**: Extensible plugin architecture
+  - Run plugins (`--plugin NAME`)
+  - List plugins (`--list-plugins`)
+  - Example plugin included
+
+### Enhanced
+- Complete feature set
+- All planned features implemented
+- Production-ready
+
+### Breaking Changes
+- None (backward compatible)
+
+### Use Cases
+- Quick pairing with QR codes
+- Remote control via web browser
+- Custom automation with plugins
+- Enterprise deployments
+
 ## [2.5.0] - 2026-02-13
 
 ### Added

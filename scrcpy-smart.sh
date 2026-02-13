@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.5.0"
+VERSION="3.0.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -15,12 +15,13 @@ CONFIG_FILE="$HOME/.scrcpy-smart.conf"
 DEVICES_DIR="$HOME/.scrcpy-devices"
 PROFILES_DIR="$HOME/.scrcpy-profiles"
 ALIASES_DIR="$HOME/.scrcpy-aliases"
+PLUGINS_DIR="$HOME/.scrcpy-plugins"
 LOG_FILE="$HOME/.scrcpy-smart.log"
 PID_FILE="$HOME/.scrcpy-smart.pid"
 ADB_PORT="${ADB_PORT:-5555}"
 
 # Create directories if not exist
-mkdir -p "$DEVICES_DIR" "$PROFILES_DIR" "$ALIASES_DIR"
+mkdir -p "$DEVICES_DIR" "$PROFILES_DIR" "$ALIASES_DIR" "$PLUGINS_DIR"
 mkdir -p "$DEVICES_DIR"
 
 # Load config file if exists
@@ -180,6 +181,14 @@ show_help() {
     echo "Clipboard:"
     echo "  --copy TEXT         Copy text to device clipboard"
     echo "  --paste             Get text from device clipboard"
+    echo ""
+    echo "Pairing:"
+    echo "  --qr                Generate QR code for pairing"
+    echo "  --pair CODE         Pair using code from QR"
+    echo ""
+    echo "Plugins:"
+    echo "  --plugin NAME       Run plugin"
+    echo "  --list-plugins      List available plugins"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -965,6 +974,74 @@ paste_from_device() {
     exit 0
 }
 
+generate_qr() {
+    local ip=$(ip route get 1 | awk '{print $7}' | head -1)
+    local port="${ADB_PORT:-5555}"
+    local code="scrcpy://$ip:$port"
+    
+    echo -e "${CYAN}📱 QR Code for Pairing${RESET}\n"
+    echo -e "${YELLOW}Scan this with your device:${RESET}\n"
+    
+    if command -v qrencode &>/dev/null; then
+        qrencode -t ANSIUTF8 "$code"
+    else
+        echo "$code"
+        echo -e "\n${YELLOW}Install 'qrencode' for QR display${RESET}"
+    fi
+    
+    echo -e "\n${GREEN}Or use: scrcpy-smart --pair $ip${RESET}"
+    exit 0
+}
+
+pair_device() {
+    local ip="$1"
+    [ -z "$ip" ] && handle_error "IP address required"
+    
+    echo -e "${CYAN}🔗 Pairing with $ip...${RESET}"
+    
+    adb connect "$ip:${ADB_PORT:-5555}"
+    sleep 2
+    
+    if adb devices | grep -q "$ip"; then
+        echo "$ip" > "$CONFIG"
+        echo -e "${GREEN}✅ Paired successfully!${RESET}"
+        [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Paired" "Connected to $ip" "normal"
+    else
+        handle_error "Pairing failed"
+    fi
+    
+    exit 0
+}
+
+run_plugin() {
+    local name="$1"
+    [ -z "$name" ] && handle_error "Plugin name required"
+    
+    local plugin="$PLUGINS_DIR/$name.sh"
+    [ ! -f "$plugin" ] && handle_error "Plugin not found: $name"
+    
+    echo -e "${CYAN}🔌 Running plugin: $name${RESET}"
+    bash "$plugin"
+    exit 0
+}
+
+list_plugins() {
+    echo -e "${CYAN}🔌 Available Plugins:${RESET}\n"
+    
+    if [ ! "$(ls -A $PLUGINS_DIR/*.sh 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No plugins installed${RESET}"
+        echo -e "\nCreate plugins in: $PLUGINS_DIR"
+        exit 0
+    fi
+    
+    for plugin in "$PLUGINS_DIR"/*.sh; do
+        local name=$(basename "$plugin" .sh)
+        echo -e "${GREEN}• $name${RESET}"
+    done
+    
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -1096,6 +1173,18 @@ while [[ $# -gt 0 ]]; do
             ;;
         --paste)
             paste_from_device
+            ;;
+        --qr)
+            generate_qr
+            ;;
+        --pair)
+            pair_device "$2"
+            ;;
+        --plugin)
+            run_plugin "$2"
+            ;;
+        --list-plugins)
+            list_plugins
             ;;
         --profile)
             PROFILE="$2"
