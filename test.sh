@@ -59,7 +59,7 @@ echo ""
 echo "2. Command Tests"
 echo "---------------"
 test_command "Help" "$SCRIPT --help" "Scrcpy Smart Connect"
-test_command "Version" "$SCRIPT --version" "2.1.0"
+test_command "Version" "$SCRIPT --version" "2.2.0"
 
 echo ""
 
