@@ -117,12 +117,17 @@
 - ✅ **Network discovery** مكتمل
 - ✅ **Backup/Restore** مكتمل
 
+### v2.5.0 - Batch & Clipboard ✅
+- [x] Batch operations
+- [x] Clipboard sync
+- [x] Multi-device file transfer
+
 ### نسبة الإنجاز:
-- **Easy Features**: 90% ✅
-- **Medium Features**: 85% ✅
+- **Easy Features**: 100% ✅
+- **Medium Features**: 95% ✅
 - **Advanced Features**: 40% 🔄
 
-### إجمالي التقدم: **75%** 🎯
+### إجمالي التقدم: **90%** 🎯
 
 ---
 
