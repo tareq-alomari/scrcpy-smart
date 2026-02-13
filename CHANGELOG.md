@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2026-02-13
+
+### Added
+- **Quality Presets**: Easy quality selection
+  - Low (480p, 2M, 30fps)
+  - Medium (720p, 4M, 60fps)
+  - High (1080p, 8M, 60fps)
+  - Ultra (1440p, 16M, 60fps)
+- **Display Controls**:
+  - Screen rotation (`--rotate`)
+  - Screen crop (`--crop`)
+- **Device Info**: Show detailed device information (`--info`)
+  - Model, Android version, SDK
+  - Resolution, Battery, IP address
+
+### Enhanced
+- Easier quality management
+- Better display control
+- Comprehensive device information
+
+### Use Cases
+- Quick quality switching for different networks
+- Rotate screen for landscape apps
+- Check device specs before connecting
+
 ## [2.2.0] - 2026-02-13
 
 ### Added

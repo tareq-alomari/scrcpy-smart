@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.2.0"
+VERSION="2.3.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -137,6 +137,19 @@ show_help() {
     echo "  --alias NAME CMD    Create command alias"
     echo "  --run-alias NAME    Run saved alias"
     echo "  --list-aliases      List all aliases"
+    echo ""
+    echo "Quality Presets:"
+    echo "  --quality low       Low quality (480p, 2M, 30fps)"
+    echo "  --quality medium    Medium quality (720p, 4M, 60fps)"
+    echo "  --quality high      High quality (1080p, 8M, 60fps)"
+    echo "  --quality ultra     Ultra quality (1440p, 16M, 60fps)"
+    echo ""
+    echo "Display:"
+    echo "  --rotate [0|90|180|270]  Rotate screen"
+    echo "  --crop WxH:X:Y           Crop screen"
+    echo ""
+    echo "Device Info:"
+    echo "  --info              Show device information"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -738,6 +751,79 @@ list_aliases() {
     exit 0
 }
 
+apply_quality() {
+    case "$1" in
+        low)
+            DEFAULT_SIZE=480
+            DEFAULT_BITRATE=2M
+            DEFAULT_FPS=30
+            echo -e "${YELLOW}📉 Low Quality${RESET}"
+            ;;
+        medium)
+            DEFAULT_SIZE=720
+            DEFAULT_BITRATE=4M
+            DEFAULT_FPS=60
+            echo -e "${CYAN}📊 Medium Quality${RESET}"
+            ;;
+        high)
+            DEFAULT_SIZE=1080
+            DEFAULT_BITRATE=8M
+            DEFAULT_FPS=60
+            echo -e "${GREEN}📈 High Quality${RESET}"
+            ;;
+        ultra)
+            DEFAULT_SIZE=1440
+            DEFAULT_BITRATE=16M
+            DEFAULT_FPS=60
+            echo -e "${MAGENTA}🚀 Ultra Quality${RESET}"
+            ;;
+        *)
+            handle_error "Unknown quality: $1. Use: low, medium, high, ultra"
+            ;;
+    esac
+}
+
+show_device_info() {
+    echo -e "${CYAN}📱 Device Information${RESET}\n"
+    
+    if [ -f "$CONFIG" ]; then
+        local ip=$(cat "$CONFIG")
+        local device="$ip:$ADB_PORT"
+    else
+        local device=$(adb devices | awk 'NR==2 {print $1}')
+    fi
+    
+    [ -z "$device" ] && handle_error "No device connected"
+    
+    echo -e "${YELLOW}Device: $device${RESET}\n"
+    
+    # Model
+    local model=$(adb -s "$device" shell getprop ro.product.model)
+    echo -e "📱 Model: ${GREEN}$model${RESET}"
+    
+    # Android Version
+    local android=$(adb -s "$device" shell getprop ro.build.version.release)
+    echo -e "🤖 Android: ${GREEN}$android${RESET}"
+    
+    # SDK Version
+    local sdk=$(adb -s "$device" shell getprop ro.build.version.sdk)
+    echo -e "📦 SDK: ${GREEN}$sdk${RESET}"
+    
+    # Resolution
+    local res=$(adb -s "$device" shell wm size | grep -oE '[0-9]+x[0-9]+')
+    echo -e "📐 Resolution: ${GREEN}$res${RESET}"
+    
+    # Battery
+    local battery=$(adb -s "$device" shell dumpsys battery | grep level | awk '{print $2}')
+    echo -e "🔋 Battery: ${GREEN}${battery}%${RESET}"
+    
+    # IP Address
+    local ip_addr=$(adb -s "$device" shell ip addr show wlan0 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1)
+    echo -e "🌐 IP: ${GREEN}$ip_addr${RESET}"
+    
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -830,6 +916,21 @@ while [[ $# -gt 0 ]]; do
             ;;
         --list-aliases)
             list_aliases
+            ;;
+        --quality)
+            apply_quality "$2"
+            shift
+            ;;
+        --rotate)
+            EXTRA_OPTS="$EXTRA_OPTS --rotation=$2"
+            shift
+            ;;
+        --crop)
+            EXTRA_OPTS="$EXTRA_OPTS --crop=$2"
+            shift
+            ;;
+        --info)
+            show_device_info
             ;;
         --profile)
             PROFILE="$2"
