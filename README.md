@@ -18,6 +18,19 @@
 
 ---
 
+## 🆕 What's New in v2.1.0
+
+- 🔄 **Device Rename**: Rename saved devices for better organization
+- 📸 **Screenshot**: Quick screenshot capture without GUI
+- 🔌 **Custom Port**: Support for custom ADB ports
+- 🌐 **Direct IP**: Connect to specific IP addresses directly
+- 🔇 **No Audio**: Option to disable audio forwarding
+- 🧹 **Clear Logs**: Clear connection logs easily
+
+[See full changelog](CHANGELOG.md)
+
+---
+
 ## ✨ Features
 
 - 🔄 **Auto-reconnect**: Remembers your device IP and connects wirelessly
@@ -94,6 +107,19 @@ scrcpy-smart --select    # Select device manually
 scrcpy-smart --verbose   # Verbose mode
 ```
 
+### Network Options (New in v2.1.0)
+
+```bash
+# Connect to specific IP directly
+scrcpy-smart --ip 192.168.1.100
+
+# Use custom ADB port
+scrcpy-smart --port 5556
+
+# Combine both
+scrcpy-smart --ip 192.168.1.100 --port 5556
+```
+
 ### Device Profiles
 
 Choose optimized settings for different use cases:
@@ -121,8 +147,14 @@ scrcpy-smart --fullscreen
 # Record to file
 scrcpy-smart --record demo.mp4
 
+# Take screenshot and exit (New in v2.1.0)
+scrcpy-smart --screenshot
+
+# Disable audio forwarding (New in v2.1.0)
+scrcpy-smart --no-audio
+
 # Combine options
-scrcpy-smart --profile gaming --fullscreen
+scrcpy-smart --profile gaming --fullscreen --no-audio
 ```
 
 ### Multi-Device Management
@@ -144,6 +176,9 @@ scrcpy-smart --device myphone
 
 # Connect with profile
 scrcpy-smart --device tablet --profile recording
+
+# Rename device (New in v2.1.0)
+scrcpy-smart --rename myphone work-phone
 
 # Remove device
 scrcpy-smart --remove myphone
@@ -171,6 +206,9 @@ scrcpy-smart --status
 
 # View connection logs
 scrcpy-smart --logs
+
+# Clear logs (New in v2.1.0)
+scrcpy-smart --clear-logs
 
 # Stop daemon
 scrcpy-smart --stop
