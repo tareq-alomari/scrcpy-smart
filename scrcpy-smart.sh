@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0.0"
+VERSION="2.1.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -15,6 +15,7 @@ CONFIG_FILE="$HOME/.scrcpy-smart.conf"
 DEVICES_DIR="$HOME/.scrcpy-devices"
 LOG_FILE="$HOME/.scrcpy-smart.log"
 PID_FILE="$HOME/.scrcpy-smart.pid"
+ADB_PORT="${ADB_PORT:-5555}"
 
 # Create devices directory if not exists
 mkdir -p "$DEVICES_DIR"
@@ -60,6 +61,7 @@ show_help() {
     echo "  --device NAME    Connect to saved device by nickname"
     echo "  --devices        List all saved devices"
     echo "  --remove NAME    Remove saved device"
+    echo "  --rename OLD NEW Rename saved device"
     echo ""
     echo "Monitoring:"
     echo "  --monitor        Monitor connection and auto-reconnect"
@@ -67,6 +69,7 @@ show_help() {
     echo "  --stop           Stop daemon"
     echo "  --status         Show daemon status"
     echo "  --logs           Show connection logs"
+    echo "  --clear-logs     Clear connection logs"
     echo ""
     echo "Profiles:"
     echo "  --profile gaming     High FPS, low latency (120fps, 720p, 4M)"
@@ -77,12 +80,20 @@ show_help() {
     echo "Quick Options:"
     echo "  --fullscreen    Launch in fullscreen"
     echo "  --record FILE   Record to file"
+    echo "  --screenshot    Take screenshot and exit"
+    echo "  --no-audio      Disable audio forwarding"
+    echo ""
+    echo "Network:"
+    echo "  --port PORT     Use custom ADB port (default: 5555)"
+    echo "  --ip IP         Connect to specific IP"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
     echo "  $0 --monitor                # Connect with auto-reconnect"
     echo "  $0 --daemon                 # Run as background daemon"
     echo "  $0 --device phone1          # Connect to 'phone1'"
+    echo "  $0 --screenshot             # Take screenshot"
+    echo "  $0 --ip 192.168.1.100       # Connect to specific IP"
     exit 0
 }
 
@@ -396,12 +407,71 @@ remove_device() {
     exit 0
 }
 
+rename_device() {
+    local old_name="$1"
+    local new_name="$2"
+    
+    if [ -z "$old_name" ] || [ -z "$new_name" ]; then
+        echo -e "${RED}Error: Both old and new names required${RESET}"
+        echo "Usage: $0 --rename OLD_NAME NEW_NAME"
+        exit 1
+    fi
+    
+    local old_file="$DEVICES_DIR/$old_name"
+    local new_file="$DEVICES_DIR/$new_name"
+    
+    if [ ! -f "$old_file" ]; then
+        echo -e "${RED}Error: Device '$old_name' not found${RESET}"
+        exit 1
+    fi
+    
+    if [ -f "$new_file" ]; then
+        echo -e "${RED}Error: Device '$new_name' already exists${RESET}"
+        exit 1
+    fi
+    
+    mv "$old_file" "$new_file"
+    echo -e "${GREEN}✅ Device renamed: '$old_name' → '$new_name'${RESET}"
+    exit 0
+}
+
+clear_logs() {
+    if [ -f "$LOG_FILE" ]; then
+        > "$LOG_FILE"
+        echo -e "${GREEN}✅ Logs cleared${RESET}"
+    else
+        echo -e "${YELLOW}No logs to clear${RESET}"
+    fi
+    exit 0
+}
+
+take_screenshot() {
+    local filename="screenshot_$(date +%Y%m%d_%H%M%S).png"
+    echo -e "${CYAN}📸 Taking screenshot...${RESET}"
+    
+    if [ -f "$CONFIG" ]; then
+        local ip=$(cat "$CONFIG")
+        adb -s "$ip:$ADB_PORT" exec-out screencap -p > "$filename"
+    else
+        adb exec-out screencap -p > "$filename"
+    fi
+    
+    if [ -f "$filename" ]; then
+        echo -e "${GREEN}✅ Screenshot saved: $filename${RESET}"
+    else
+        echo -e "${RED}❌ Screenshot failed${RESET}"
+        exit 1
+    fi
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
 RECORD_FILE=""
 DEVICE_NAME=""
 MONITOR_MODE=false
+CUSTOM_IP=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -425,6 +495,9 @@ while [[ $# -gt 0 ]]; do
         --remove)
             remove_device "$2"
             ;;
+        --rename)
+            rename_device "$2" "$3"
+            ;;
         --monitor)
             MONITOR_MODE=true
             ;;
@@ -440,6 +513,12 @@ while [[ $# -gt 0 ]]; do
         --logs)
             show_logs
             ;;
+        --clear-logs)
+            clear_logs
+            ;;
+        --screenshot)
+            take_screenshot
+            ;;
         --profile)
             PROFILE="$2"
             shift
@@ -447,14 +526,31 @@ while [[ $# -gt 0 ]]; do
         --fullscreen)
             EXTRA_OPTS="$EXTRA_OPTS --fullscreen"
             ;;
+        --no-audio)
+            EXTRA_OPTS="$EXTRA_OPTS --no-audio"
+            ;;
         --record)
             RECORD_FILE="$2"
+            shift
+            ;;
+        --port)
+            ADB_PORT="$2"
+            shift
+            ;;
+        --ip)
+            CUSTOM_IP="$2"
             shift
             ;;
         *) echo "Unknown option: $1"; show_help ;;
     esac
     shift
 done
+
+# Use custom IP if provided
+if [ -n "$CUSTOM_IP" ]; then
+    echo "$CUSTOM_IP" > "$CONFIG"
+    echo -e "${GREEN}✅ Using IP: $CUSTOM_IP${RESET}"
+fi
 
 # Switch to specific device if requested
 if [ -n "$DEVICE_NAME" ]; then

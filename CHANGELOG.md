@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-02-13
+
+### Added
+- **Device Rename**: Rename saved devices (`--rename OLD NEW`)
+- **Clear Logs**: Clear connection logs (`--clear-logs`)
+- **Screenshot**: Take screenshot and exit (`--screenshot`)
+- **Custom Port**: Use custom ADB port (`--port PORT`)
+- **Direct IP**: Connect to specific IP (`--ip IP`)
+- **No Audio**: Disable audio forwarding (`--no-audio`)
+
+### Enhanced
+- More flexible device management
+- Better command-line options
+- Improved help documentation
+
+### Use Cases
+- Rename devices for better organization
+- Take quick screenshots without GUI
+- Use custom ADB ports
+- Connect to specific IPs directly
+
 ## [2.0.0] - 2026-02-13
 
 ### Added
