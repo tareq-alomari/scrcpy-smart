@@ -9,16 +9,27 @@ All notable changes to this project will be documented in this file.
 - **New Profiles**: 
   - Development profile (`--profile dev`)
   - Presentation profile (`--profile presentation`)
+- **Network Discovery**: Scan network for Android devices (`--scan`)
+- **Performance Monitoring**: Show device stats (`--perf`)
+- **Quick Actions**:
+  - Reboot device (`--reboot`)
+  - Install APK (`--install FILE`)
+  - Open shell (`--shell`)
 - **Error Logging**: Automatic error logging to help troubleshooting
 
 ### Enhanced
 - Error messages now suggest solutions
 - Profile system expanded with more use cases
 - Better user guidance on failures
+- Network scanning capabilities
+- Device performance monitoring
 
 ### Use Cases
 - Development: Stay-awake mode for coding sessions
 - Presentation: Fullscreen borderless for demos
+- Network: Find devices on local network
+- Monitoring: Check device performance
+- Quick actions: Fast device management
 
 ## [2.1.0] - 2026-02-13
 

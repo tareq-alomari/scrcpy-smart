@@ -113,6 +113,13 @@ show_help() {
     echo "Network:"
     echo "  --port PORT     Use custom ADB port (default: 5555)"
     echo "  --ip IP         Connect to specific IP"
+    echo "  --scan          Scan network for Android devices"
+    echo "  --perf          Show performance stats"
+    echo ""
+    echo "Quick Actions:"
+    echo "  --reboot        Reboot device"
+    echo "  --install FILE  Install APK"
+    echo "  --shell         Open ADB shell"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -505,6 +512,97 @@ take_screenshot() {
     exit 0
 }
 
+scan_network() {
+    echo -e "${CYAN}🔍 Scanning network for Android devices...${RESET}"
+    
+    # Get local network
+    local network=$(ip route | grep default | awk '{print $3}' | cut -d. -f1-3)
+    
+    if [ -z "$network" ]; then
+        handle_error "Could not detect network"
+    fi
+    
+    echo -e "${YELLOW}Scanning ${network}.0/24...${RESET}"
+    
+    local found=0
+    for i in {1..254}; do
+        local ip="${network}.$i"
+        timeout 0.2 adb connect "$ip:5555" &>/dev/null
+        if adb devices | grep -q "$ip"; then
+            echo -e "${GREEN}✅ Found device at: $ip${RESET}"
+            ((found++))
+        fi
+    done
+    
+    if [ $found -eq 0 ]; then
+        echo -e "${YELLOW}No devices found on network${RESET}"
+    else
+        echo -e "${GREEN}Found $found device(s)${RESET}"
+    fi
+    
+    exit 0
+}
+
+show_performance() {
+    echo -e "${CYAN}📊 Performance Stats${RESET}\n"
+    
+    if [ -f "$CONFIG" ]; then
+        local ip=$(cat "$CONFIG")
+        local device="$ip:$ADB_PORT"
+    else
+        local device=$(adb devices | awk 'NR==2 {print $1}')
+    fi
+    
+    if [ -z "$device" ]; then
+        handle_error "No device connected"
+    fi
+    
+    echo -e "${YELLOW}Device: $device${RESET}"
+    
+    # Battery
+    local battery=$(adb -s "$device" shell dumpsys battery | grep level | awk '{print $2}')
+    echo -e "🔋 Battery: ${GREEN}${battery}%${RESET}"
+    
+    # CPU
+    local cpu=$(adb -s "$device" shell top -n 1 | grep "CPU:" | awk '{print $2}')
+    echo -e "⚡ CPU: ${CYAN}${cpu}${RESET}"
+    
+    # Memory
+    local mem=$(adb -s "$device" shell dumpsys meminfo | grep "Total RAM" | awk '{print $3}')
+    echo -e "💾 Memory: ${CYAN}${mem}${RESET}"
+    
+    # Screen
+    local screen=$(adb -s "$device" shell dumpsys power | grep "mScreenOn" | awk -F= '{print $2}')
+    echo -e "📱 Screen: ${CYAN}${screen}${RESET}"
+    
+    exit 0
+}
+
+quick_reboot() {
+    echo -e "${YELLOW}🔄 Rebooting device...${RESET}"
+    adb reboot
+    echo -e "${GREEN}✅ Reboot command sent${RESET}"
+    exit 0
+}
+
+quick_install() {
+    local apk="$1"
+    if [ ! -f "$apk" ]; then
+        handle_error "APK file not found: $apk"
+    fi
+    
+    echo -e "${CYAN}📦 Installing $apk...${RESET}"
+    adb install "$apk"
+    echo -e "${GREEN}✅ Installation complete${RESET}"
+    exit 0
+}
+
+quick_shell() {
+    echo -e "${CYAN}🐚 Opening ADB shell...${RESET}"
+    adb shell
+    exit 0
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -558,6 +656,21 @@ while [[ $# -gt 0 ]]; do
             ;;
         --screenshot)
             take_screenshot
+            ;;
+        --scan)
+            scan_network
+            ;;
+        --perf)
+            show_performance
+            ;;
+        --reboot)
+            quick_reboot
+            ;;
+        --install)
+            quick_install "$2"
+            ;;
+        --shell)
+            quick_shell
             ;;
         --profile)
             PROFILE="$2"
