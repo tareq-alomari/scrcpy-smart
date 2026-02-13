@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.3.0"
+VERSION="2.4.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -36,6 +36,7 @@ VERBOSE="${VERBOSE:-false}"
 AUTO_RECONNECT="${AUTO_RECONNECT:-false}"
 RECONNECT_INTERVAL="${RECONNECT_INTERVAL:-5}"
 ERROR_LOG="${ERROR_LOG:-true}"
+NOTIFY="${NOTIFY:-false}"
 
 # Detect OS
 OS="$(uname -s)"
@@ -54,6 +55,9 @@ handle_error() {
     echo -e "${RED}❌ Error: $error_msg${RESET}" >&2
     [ "$ERROR_LOG" = "true" ] && echo "[$(date)] ERROR: $error_msg" >> "$LOG_FILE"
     
+    # Send notification
+    [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Error" "$error_msg" "error"
+    
     # Suggest solutions
     case "$error_msg" in
         *"No device"*) 
@@ -68,6 +72,16 @@ handle_error() {
     esac
     
     exit "$error_code"
+}
+
+notify_send() {
+    local title="$1"
+    local msg="$2"
+    local urgency="${3:-normal}"
+    
+    if command -v notify-send &>/dev/null; then
+        notify-send -u "$urgency" "$title" "$msg"
+    fi
 }
 
 show_help() {
@@ -150,6 +164,13 @@ show_help() {
     echo ""
     echo "Device Info:"
     echo "  --info              Show device information"
+    echo ""
+    echo "Notifications:"
+    echo "  --notify            Enable desktop notifications"
+    echo ""
+    echo "Advanced:"
+    echo "  --watch             Watch for device and auto-connect"
+    echo "  --timeout SEC       Connection timeout (default: 30)"
     echo ""
     echo "Examples:"
     echo "  $0                          # Connect to last device"
@@ -824,6 +845,30 @@ show_device_info() {
     exit 0
 }
 
+watch_mode() {
+    local timeout="${1:-30}"
+    echo -e "${CYAN}👁️  Watch Mode: Waiting for device...${RESET}"
+    [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Watch" "Waiting for device..." "normal"
+    
+    local elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        local device=$(adb devices | awk 'NR==2 {print $1}')
+        
+        if [ -n "$device" ]; then
+            echo -e "${GREEN}✅ Device detected!${RESET}"
+            [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Watch" "Device detected! Connecting..." "normal"
+            sleep 2
+            exec "$0"
+        fi
+        
+        sleep 1
+        ((elapsed++))
+    done
+    
+    echo -e "${YELLOW}⏱️  Timeout: No device found${RESET}"
+    exit 1
+}
+
 # Parse arguments
 PROFILE=""
 EXTRA_OPTS=""
@@ -932,6 +977,15 @@ while [[ $# -gt 0 ]]; do
         --info)
             show_device_info
             ;;
+        --notify)
+            NOTIFY=true
+            ;;
+        --watch)
+            watch_mode "${2:-30}"
+            ;;
+        --timeout)
+            shift
+            ;;
         --profile)
             PROFILE="$2"
             shift
@@ -1010,6 +1064,7 @@ if [ -f "$CONFIG" ]; then
     
     if adb devices | grep -q "$SAVED_IP"; then
         echo -e "${GREEN}✅ Connected wirelessly!${RESET}"
+        [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Connected" "Connected to $SAVED_IP" "normal"
         log_verbose "Launching scrcpy with: --max-size $SCRCPY_SIZE --bit-rate $SCRCPY_BITRATE --max-fps $SCRCPY_FPS $SCRCPY_OPTS"
         scrcpy -s "$SAVED_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
         exit 0

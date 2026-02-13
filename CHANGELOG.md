@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-02-13
+
+### Added
+- **Desktop Notifications**: Get notified on important events (`--notify`)
+  - Connection success/failure
+  - Error notifications
+  - Device detection
+- **Watch Mode**: Auto-connect when device appears (`--watch`)
+  - Waits for device to connect
+  - Configurable timeout
+  - Auto-launch on detection
+- **Connection Timeout**: Set custom timeout (`--timeout SEC`)
+
+### Enhanced
+- Better user feedback with notifications
+- Automatic device detection
+- Improved connection workflow
+
+### Use Cases
+- Get notified when device connects
+- Auto-connect when plugging device
+- Background monitoring with notifications
+
 ## [2.3.0] - 2026-02-13
 
 ### Added
