@@ -1,0 +1,130 @@
+{
+  "name": "scrcpy-smart",
+  "displayName": "Scrcpy Smart Connect",
+  "description": "Smart wireless connection manager for scrcpy - Connect to Android devices via WiFi directly from VS Code",
+  "version": "2.4.0",
+  "publisher": "tareq-alomari",
+  "author": {
+    "name": "Tareq Alomari",
+    "url": "https://github.com/tareq-alomari"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tareq-alomari/scrcpy-smart"
+  },
+  "bugs": {
+    "url": "https://github.com/tareq-alomari/scrcpy-smart/issues"
+  },
+  "homepage": "https://github.com/tareq-alomari/scrcpy-smart#readme",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "keywords": [
+    "scrcpy",
+    "android",
+    "screen-mirror",
+    "adb",
+    "mobile",
+    "device",
+    "wireless",
+    "remote-control"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "scrcpy-smart.connect",
+        "title": "Scrcpy: Connect Device",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "scrcpy-smart.quickPick",
+        "title": "Scrcpy: Quick Actions",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "scrcpy-smart.connectIP",
+        "title": "Scrcpy: Connect to IP",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "scrcpy-smart.screenshot",
+        "title": "Scrcpy: Take Screenshot",
+        "icon": "$(device-camera)"
+      },
+      {
+        "command": "scrcpy-smart.listDevices",
+        "title": "Scrcpy: List Devices",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "scrcpy-smart.reset",
+        "title": "Scrcpy: Reset Connection",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "scrcpy-smart.connectProfile",
+        "title": "Scrcpy: Connect with Profile",
+        "icon": "$(symbol-misc)"
+      },
+      {
+        "command": "scrcpy-smart.installDeps",
+        "title": "Scrcpy: Install Dependencies",
+        "icon": "$(cloud-download)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "scrcpy-smart.quickPick",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      },
+      {
+        "command": "scrcpy-smart.connect",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c"
+      },
+      {
+        "command": "scrcpy-smart.screenshot",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      }
+    ],
+    "configuration": {
+      "title": "Scrcpy Smart",
+      "properties": {
+        "scrcpy-smart.bitrate": {
+          "type": "string",
+          "default": "8M",
+          "description": "Video bitrate (e.g., 4M, 8M, 16M)"
+        },
+        "scrcpy-smart.maxSize": {
+          "type": "number",
+          "default": 1024,
+          "description": "Maximum resolution (e.g., 720, 1024, 1920)"
+        },
+        "scrcpy-smart.maxFps": {
+          "type": "number",
+          "default": 60,
+          "description": "Maximum frames per second (e.g., 30, 60)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}
