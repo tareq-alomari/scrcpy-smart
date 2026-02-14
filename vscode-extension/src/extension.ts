@@ -12,15 +12,17 @@ let scriptPath: string | null = null;
 let scrcpyInstalled: boolean | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
-    scriptPath = getScriptPath();
-    checkDependencies().catch(() => {});
-    
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.command = 'scrcpy-smart.quickPick';
-    statusBarItem.text = '$(device-mobile) Scrcpy';
-    statusBarItem.tooltip = 'Click to connect device';
+    statusBarItem.text = '$(sync~spin) Setting up...';
+    statusBarItem.tooltip = 'Setting up Scrcpy Smart';
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
+    
+    autoSetup(context).catch(() => {});
+    
+    statusBarItem.text = '$(device-mobile) Scrcpy';
+    statusBarItem.tooltip = 'Click to connect device';
 
     context.subscriptions.push(
         vscode.commands.registerCommand('scrcpy-smart.connect', () => connectDevice(context)),
@@ -41,7 +43,11 @@ export function activate(context: vscode.ExtensionContext) {
             showNotification('Connection reset', 'info');
         }),
         vscode.commands.registerCommand('scrcpy-smart.connectProfile', () => connectWithProfile(context)),
-        vscode.commands.registerCommand('scrcpy-smart.installDeps', () => installDependencies())
+        vscode.commands.registerCommand('scrcpy-smart.installDeps', () => installDependencies()),
+        vscode.commands.registerCommand('scrcpy-smart.setup', () => {
+            context.globalState.update('setupCompleted', false);
+            autoSetup(context);
+        })
     );
 }
 
@@ -54,6 +60,7 @@ async function showQuickPick(context: vscode.ExtensionContext) {
         { label: '$(symbol-misc) Gaming Profile', action: 'gaming' },
         { label: '$(record) Recording Profile', action: 'recording' },
         { label: '$(presentation) Demo Profile', action: 'demo' },
+        { label: '$(gear) Run Setup Wizard', action: 'setup' },
         { label: '$(cloud-download) Install Dependencies', action: 'install' },
         { label: '$(refresh) Reset Connection', action: 'reset' }
     ];
@@ -69,6 +76,7 @@ async function showQuickPick(context: vscode.ExtensionContext) {
         gaming: () => connectDevice(context, ['--profile', 'gaming']),
         recording: () => connectDevice(context, ['--profile', 'recording']),
         demo: () => connectDevice(context, ['--profile', 'demo']),
+        setup: () => { vscode.commands.executeCommand('scrcpy-smart.setup'); },
         install: () => { vscode.commands.executeCommand('scrcpy-smart.installDeps'); },
         reset: () => { vscode.commands.executeCommand('scrcpy-smart.reset'); }
     };
@@ -103,6 +111,24 @@ function updateStatusBar(device?: string) {
 async function connectDevice(context: vscode.ExtensionContext, args: string[] = []) {
     const script = scriptPath || getScriptPath();
     
+    if (!fs.existsSync(script) && !script.includes('/')) {
+        try {
+            await execAsync(`command -v ${script}`);
+        } catch {
+            const choice = await vscode.window.showErrorMessage(
+                '❌ scrcpy-smart not found. Please install it first.',
+                'Open Installation Guide',
+                'Set Custom Path'
+            );
+            if (choice === 'Open Installation Guide') {
+                vscode.env.openExternal(vscode.Uri.parse('https://github.com/tareq-alomari/scrcpy-smart#-quick-install'));
+            } else if (choice === 'Set Custom Path') {
+                vscode.commands.executeCommand('workbench.action.openSettings', 'scrcpy-smart.scriptPath');
+            }
+            return;
+        }
+    }
+    
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -130,13 +156,30 @@ async function runCommand(context: vscode.ExtensionContext, args: string[]) {
 function getScriptPath(): string {
     if (scriptPath) return scriptPath;
     
+    const config = vscode.workspace.getConfiguration('scrcpy-smart');
+    const customPath = config.get<string>('scriptPath');
+    
+    if (customPath && fs.existsSync(customPath)) {
+        scriptPath = customPath;
+        return scriptPath;
+    }
+    
     const homeDir = os.homedir();
     const paths = [
+        'scrcpy-smart',
         path.join(homeDir, '.local', 'bin', 'scrcpy-smart'),
-        path.join(homeDir, 'scrcpy-smart', 'scrcpy-smart.sh')
+        '/usr/local/bin/scrcpy-smart',
+        '/usr/bin/scrcpy-smart'
     ];
     
-    scriptPath = paths.find(p => fs.existsSync(p)) || paths[1];
+    scriptPath = paths.find(p => {
+        try {
+            return fs.existsSync(p) || execAsync(`command -v ${p}`).then(() => true).catch(() => false);
+        } catch {
+            return false;
+        }
+    }) || 'scrcpy-smart';
+    
     return scriptPath;
 }
 
@@ -175,6 +218,100 @@ async function installDependencies() {
     terminal.show();
     terminal.sendText(command);
     vscode.window.showInformationMessage('📦 Installing scrcpy... Check terminal for progress.');
+}
+
+async function autoSetup(context: vscode.ExtensionContext) {
+    const setupDone = context.globalState.get<boolean>('setupCompleted');
+    if (setupDone) {
+        scriptPath = getScriptPath();
+        return;
+    }
+    
+    const steps: string[] = [];
+    
+    // Check scrcpy-smart CLI
+    try {
+        await execAsync('command -v scrcpy-smart');
+        scriptPath = 'scrcpy-smart';
+    } catch {
+        steps.push('scrcpy-smart CLI');
+    }
+    
+    // Check scrcpy
+    try {
+        await execAsync('command -v scrcpy');
+        scrcpyInstalled = true;
+    } catch {
+        steps.push('scrcpy');
+        scrcpyInstalled = false;
+    }
+    
+    // Check ADB
+    try {
+        await execAsync('command -v adb');
+    } catch {
+        steps.push('ADB');
+    }
+    
+    if (steps.length === 0) {
+        await context.globalState.update('setupCompleted', true);
+        vscode.window.showInformationMessage('✅ Scrcpy Smart is ready!');
+        return;
+    }
+    
+    const missing = steps.join(', ');
+    const choice = await vscode.window.showWarningMessage(
+        `⚠️ Missing: ${missing}. Install automatically?`,
+        'Install All',
+        'Manual Setup',
+        'Later'
+    );
+    
+    if (choice === 'Install All') {
+        await autoInstallAll(context, steps);
+    } else if (choice === 'Manual Setup') {
+        vscode.env.openExternal(vscode.Uri.parse('https://github.com/tareq-alomari/scrcpy-smart#-quick-install'));
+    }
+}
+
+async function autoInstallAll(context: vscode.ExtensionContext, missing: string[]) {
+    const terminal = vscode.window.createTerminal('Scrcpy Setup');
+    terminal.show();
+    
+    const platform = process.platform;
+    const commands: string[] = [];
+    
+    if (missing.includes('scrcpy-smart CLI')) {
+        commands.push('echo "📦 Installing scrcpy-smart CLI..."');
+        commands.push('curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash');
+    }
+    
+    if (missing.includes('scrcpy') || missing.includes('ADB')) {
+        commands.push('echo "📦 Installing scrcpy and ADB..."');
+        
+        if (platform === 'linux') {
+            commands.push('sudo apt update && sudo apt install -y scrcpy adb');
+        } else if (platform === 'darwin') {
+            commands.push('brew install scrcpy android-platform-tools');
+        } else if (platform === 'win32') {
+            commands.push('winget install Genymobile.scrcpy');
+            commands.push('winget install Google.PlatformTools');
+        }
+    }
+    
+    commands.push('echo "✅ Installation complete! Please restart VS Code."');
+    terminal.sendText(commands.join(' && '));
+    
+    await vscode.window.showInformationMessage(
+        '📦 Installing dependencies... Check terminal for progress. Restart VS Code when done.',
+        'Restart Now'
+    ).then(choice => {
+        if (choice === 'Restart Now') {
+            vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+    });
+    
+    await context.globalState.update('setupCompleted', true);
 }
 
 export function deactivate() {

@@ -1,29 +1,147 @@
 # 📦 VS Code Extension - Installation Guide
 
-## ✅ تم إنشاء الإضافة بنجاح!
+## ⚠️ متطلبات التثبيت
 
-الملف: `scrcpy-smart-2.1.0.vsix`
+**الإضافة تحتاج أداة scrcpy-smart CLI مثبتة أولاً!**
 
 ---
 
-## 🚀 طرق التثبيت
+## 🚀 خطوات التثبيت الكاملة
 
-### 1️⃣ التثبيت المحلي (Local Installation)
+### 1️⃣ تثبيت scrcpy-smart CLI (مطلوب)
 
-#### من VS Code:
-1. افتح VS Code
-2. اضغط `Ctrl+Shift+P` (أو `Cmd+Shift+P` على macOS)
-3. اكتب: `Extensions: Install from VSIX`
-4. اختر الملف: `scrcpy-smart-2.1.0.vsix`
-
-#### من سطر الأوامر:
+**التثبيت السريع (موصى به):**
 ```bash
-code --install-extension scrcpy-smart-2.1.0.vsix
+curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
+```
+
+**التثبيت اليدوي:**
+```bash
+git clone https://github.com/tareq-alomari/scrcpy-smart.git
+cd scrcpy-smart
+./install.sh
+```
+
+**التحقق من التثبيت:**
+```bash
+which scrcpy-smart
+# يجب أن يظهر: /home/username/.local/bin/scrcpy-smart
+
+scrcpy-smart --version
+# يجب أن يظهر رقم الإصدار
 ```
 
 ---
 
-### 2️⃣ النشر على VS Code Marketplace
+### 2️⃣ تثبيت scrcpy و ADB
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt install scrcpy adb
+```
+
+**macOS:**
+```bash
+brew install scrcpy android-platform-tools
+```
+
+**Windows:**
+```powershell
+winget install Genymobile.scrcpy
+winget install Google.PlatformTools
+```
+
+---
+
+### 3️⃣ تثبيت إضافة VS Code
+
+#### من VS Code Marketplace:
+1. افتح VS Code
+2. اذهب إلى Extensions (Ctrl+Shift+X)
+3. ابحث عن "Scrcpy Smart Connect"
+4. اضغط Install
+
+#### من ملف VSIX:
+```bash
+code --install-extension scrcpy-smart-2.4.1.vsix
+```
+
+#### من داخل VS Code:
+1. اضغط `Ctrl+Shift+P`
+2. اكتب: `Extensions: Install from VSIX`
+3. اختر الملف: `scrcpy-smart-2.4.1.vsix`
+
+---
+
+## 🔧 حل المشاكل الشائعة
+
+### ❌ خطأ: "scrcpy-smart not found"
+
+**السبب:** الإضافة لا تجد أداة scrcpy-smart CLI
+
+**الحلول:**
+
+#### 1. تحقق من التثبيت:
+```bash
+which scrcpy-smart
+```
+
+إذا لم يظهر شيء، ثبت الأداة أولاً (راجع الخطوة 1 أعلاه)
+
+#### 2. تحقق من PATH:
+```bash
+echo $PATH | grep ".local/bin"
+```
+
+إذا كان فارغاً، أضف إلى `~/.bashrc` أو `~/.zshrc`:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+ثم أعد تحميل:
+```bash
+source ~/.bashrc  # أو source ~/.zshrc
+```
+
+#### 3. حدد المسار يدوياً في VS Code:
+1. افتح Settings (Ctrl+,)
+2. ابحث عن "scrcpy-smart.scriptPath"
+3. أدخل المسار الكامل للسكريبت
+4. مثال: `/home/username/.local/bin/scrcpy-smart`
+
+#### 4. أعد تشغيل VS Code:
+بعد تثبيت الأداة، أعد تشغيل VS Code بالكامل
+
+---
+
+## 📍 أماكن البحث التلقائي
+
+الإضافة تبحث عن scrcpy-smart في:
+1. ✅ أمر النظام `scrcpy-smart` (في PATH)
+2. ✅ `~/.local/bin/scrcpy-smart`
+3. ✅ `/usr/local/bin/scrcpy-smart`
+4. ✅ `/usr/bin/scrcpy-smart`
+5. ✅ المسار المخصص في الإعدادات
+
+---
+
+## 🎯 التحقق من التثبيت الصحيح
+
+بعد التثبيت، جرب:
+
+1. **من Terminal:**
+   ```bash
+   scrcpy-smart --version
+   ```
+
+2. **من VS Code:**
+   - اضغط `Ctrl+Shift+P`
+   - اكتب: `Scrcpy: Connect Device`
+   - يجب أن يعمل بدون أخطاء
+
+---
+
+## 2️⃣ النشر على VS Code Marketplace
 
 #### المتطلبات:
 1. حساب على [Azure DevOps](https://dev.azure.com)

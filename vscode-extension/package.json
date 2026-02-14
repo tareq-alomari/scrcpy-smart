@@ -2,7 +2,7 @@
   "name": "scrcpy-smart",
   "displayName": "Scrcpy Smart Connect",
   "description": "Smart wireless connection manager for scrcpy - Connect to Android devices via WiFi directly from VS Code",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "publisher": "tareq-alomari",
   "author": {
     "name": "Tareq Alomari",
@@ -75,6 +75,11 @@
         "command": "scrcpy-smart.installDeps",
         "title": "Scrcpy: Install Dependencies",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "scrcpy-smart.setup",
+        "title": "Scrcpy: Run Setup Wizard",
+        "icon": "$(gear)"
       }
     ],
     "keybindings": [
@@ -97,6 +102,11 @@
     "configuration": {
       "title": "Scrcpy Smart",
       "properties": {
+        "scrcpy-smart.scriptPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to scrcpy-smart script (leave empty for auto-detect)"
+        },
         "scrcpy-smart.bitrate": {
           "type": "string",
           "default": "8M",

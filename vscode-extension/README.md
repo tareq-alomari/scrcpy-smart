@@ -13,7 +13,7 @@
 
 **Smart wireless connection manager for scrcpy**
 
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/tareq-alomari/scrcpy-smart)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/tareq-alomari/scrcpy-smart)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/tareq-alomari/scrcpy-smart)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.80%2B-007ACC.svg)](https://code.visualstudio.com/)
@@ -29,6 +29,16 @@
 **Scrcpy Smart Connect** brings the power of wireless Android device mirroring directly into Visual Studio Code. Control your Android device, take screenshots, and manage connections without leaving your editor.
 
 Built on top of [scrcpy](https://github.com/Genymobile/scrcpy) by Genymobile, this extension adds intelligent connection management, auto-reconnect, and seamless integration with VS Code.
+
+---
+
+## 🆕 What's New in v2.5.0
+
+- 🚀 **Auto-Install Everything** - One-click installation of all dependencies
+- 🧙 **Setup Wizard** - Guides you through first-time setup
+- ✨ **Zero Manual Setup** - Just install and go!
+- 🔄 **Smart Detection** - Installs only what's missing
+- 📦 **Platform Support** - Works on Linux, macOS, and Windows
 
 ---
 
@@ -69,38 +79,83 @@ Built on top of [scrcpy](https://github.com/Genymobile/scrcpy) by Genymobile, th
 
 ## 📦 Installation
 
-### Prerequisites
+### ⚡ Quick Install (Automatic)
 
-The extension will automatically offer to install scrcpy if not found, or install manually:
+**Just install the extension - it will handle everything automatically!**
+
+1. **Install from VS Code Marketplace:**
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Search for "Scrcpy Smart Connect"
+   - Click Install
+
+2. **First Launch:**
+   - Extension will check for missing dependencies
+   - Click "Install All" when prompted
+   - Wait for installation to complete
+   - Restart VS Code when prompted
+   - Done! 🎉
+
+### 🛠️ Manual Installation (Optional)
+
+If you prefer manual setup or auto-install fails:
 
 **Linux (Ubuntu/Debian):**
 ```bash
+# Install scrcpy-smart CLI
+curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
+
+# Install scrcpy & ADB
 sudo apt install scrcpy adb
 ```
 
 **macOS:**
 ```bash
+# Install scrcpy-smart CLI
+curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
+
+# Install scrcpy & ADB
 brew install scrcpy android-platform-tools
 ```
 
 **Windows:**
 ```powershell
+# Install scrcpy & ADB
 winget install Genymobile.scrcpy
 winget install Google.PlatformTools
+
+# Install scrcpy-smart CLI (in Git Bash or WSL)
+curl -fsSL https://raw.githubusercontent.com/tareq-alomari/scrcpy-smart/main/install.sh | bash
 ```
 
-### Install Extension
+### 🔄 Re-run Setup
 
-1. **From VSIX file:**
+If you need to run the setup wizard again:
+- Press `Ctrl+Shift+P`
+- Type: `Scrcpy: Run Setup Wizard`
+- Click "Install All"
+
+### Troubleshooting Installation
+
+**If auto-install doesn't work:**
+
+1. **Run setup wizard manually:**
+   - Press `Ctrl+Shift+P`
+   - Type: `Scrcpy: Run Setup Wizard`
+
+2. **Check what's missing:**
    ```bash
-   code --install-extension scrcpy-smart-2.4.0.vsix
+   which scrcpy-smart  # Should show path
+   which scrcpy        # Should show path
+   which adb           # Should show path
    ```
 
-2. **From VS Code Marketplace:** (Coming soon)
-   - Open VS Code
-   - Go to Extensions (Ctrl+Shift+X)
-   - Search for "Scrcpy Smart Connect"
-   - Click Install
+3. **Set custom path:**
+   - Settings → "scrcpy-smart.scriptPath"
+   - Enter full path: `/home/username/.local/bin/scrcpy-smart`
+
+4. **Manual installation:**
+   - See "Manual Installation" section above
 
 ---
 
@@ -145,11 +200,27 @@ Configure in VS Code Settings (`Ctrl+,`):
 
 ```json
 {
-  "scrcpy-smart.bitrate": "8M",      // Video bitrate (4M, 8M, 16M)
-  "scrcpy-smart.maxSize": 1024,      // Max resolution (720, 1024, 1920)
-  "scrcpy-smart.maxFps": 60          // Max FPS (30, 60, 120)
+  "scrcpy-smart.scriptPath": "",    // Custom path to scrcpy-smart (auto-detect if empty)
+  "scrcpy-smart.bitrate": "8M",     // Video bitrate (4M, 8M, 16M)
+  "scrcpy-smart.maxSize": 1024,     // Max resolution (720, 1024, 1920)
+  "scrcpy-smart.maxFps": 60         // Max FPS (30, 60, 120)
 }
 ```
+
+### Custom Script Path
+
+If the extension can't find `scrcpy-smart` automatically:
+
+1. Open Settings (Ctrl+,)
+2. Search for "scrcpy-smart.scriptPath"
+3. Enter the full path to your script
+4. Example: `/home/username/.local/bin/scrcpy-smart`
+
+The extension will auto-detect the script in these locations:
+- System PATH (`scrcpy-smart` command)
+- `~/.local/bin/scrcpy-smart`
+- `/usr/local/bin/scrcpy-smart`
+- `/usr/bin/scrcpy-smart`
 
 ---
 

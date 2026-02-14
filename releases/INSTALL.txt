@@ -1,0 +1,49 @@
+═══════════════════════════════════════════════════════════
+📦 Scrcpy Smart Connect - VSCode Extension v2.4.0
+═══════════════════════════════════════════════════════════
+
+📥 التثبيت:
+
+الطريقة 1: من VSCode
+   1. افتح VSCode
+   2. اضغط Ctrl+Shift+P
+   3. اكتب: Extensions: Install from VSIX
+   4. اختر: scrcpy-smart-2.4.0.vsix
+
+الطريقة 2: من Terminal
+   $ code --install-extension scrcpy-smart-2.4.0.vsix
+
+⌨️  الاختصارات:
+   Ctrl+Alt+S - Quick Actions Menu
+   Ctrl+Alt+C - Connect Device
+   Ctrl+Alt+P - Screenshot
+
+📚 الأوامر (8):
+   - Scrcpy: Connect Device
+   - Scrcpy: Quick Actions
+   - Scrcpy: Connect to IP
+   - Scrcpy: Screenshot
+   - Scrcpy: List Devices
+   - Scrcpy: Reset Connection
+   - Scrcpy: Connect with Profile
+   - Scrcpy: Install Dependencies
+
+⚙️  الإعدادات:
+   Settings → Extensions → Scrcpy Smart
+   - Bitrate: 8M (default)
+   - Max Size: 1024 (default)
+   - Max FPS: 60 (default)
+
+📋 المتطلبات:
+   - VSCode >= 1.80.0
+   - scrcpy (installed)
+   - ADB (Android Debug Bridge)
+
+🔗 الروابط:
+   GitHub: https://github.com/tareq-alomari/scrcpy-smart
+   Issues: https://github.com/tareq-alomari/scrcpy-smart/issues
+
+📧 الاتصال:
+   tareq.software.devloper@gmail.com
+
+═══════════════════════════════════════════════════════════
