@@ -2,7 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-03-17
+
+### Added
+- **ADB Unauthorized Loop**: Waits up to 30s and prompts user to allow USB debugging on device
+- **`--reconnect`**: Auto-reconnects scrcpy when connection drops instead of exiting
+- **Auto-enable tcpip**: Automatically runs `adb tcpip 5555` when USB device is detected before wireless attempt
+- **`--auto-quality`**: Measures WiFi latency and selects optimal bitrate/resolution/fps automatically
+- **`--check`**: Health check command — diagnoses scrcpy, adb, device auth, network reachability step by step
+- **Disconnect notification**: Desktop notification sent when scrcpy session ends (requires `--notify`)
+
+---
+
 ## [3.0.0] - 2026-02-13 🎉
+
 
 ### Added - Major Release
 - **QR Code Pairing**: Quick device pairing with QR codes

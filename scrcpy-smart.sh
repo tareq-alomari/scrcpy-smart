@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="3.0.0"
+VERSION="3.1.0"
 
 GREEN="\e[32m"
 RED="\e[31m"
@@ -34,7 +34,8 @@ DEFAULT_BITRATE="${DEFAULT_BITRATE:-8M}"
 DEFAULT_SIZE="${DEFAULT_SIZE:-1024}"
 DEFAULT_FPS="${DEFAULT_FPS:-60}"
 VERBOSE="${VERBOSE:-false}"
-AUTO_RECONNECT="${AUTO_RECONNECT:-false}"
+RECONNECT_ON_EXIT="${RECONNECT_ON_EXIT:-false}"
+AUTO_QUALITY="${AUTO_QUALITY:-false}"
 RECONNECT_INTERVAL="${RECONNECT_INTERVAL:-5}"
 ERROR_LOG="${ERROR_LOG:-true}"
 NOTIFY="${NOTIFY:-false}"
@@ -168,6 +169,9 @@ show_help() {
     echo ""
     echo "Notifications:"
     echo "  --notify            Enable desktop notifications"
+    echo "  --reconnect         Auto-reconnect when scrcpy exits"
+    echo "  --auto-quality      Auto-select quality based on WiFi"
+    echo "  --check             Health check: diagnose connection issues"
     echo ""
     echo "Advanced:"
     echo "  --watch             Watch for device and auto-connect"
@@ -790,6 +794,83 @@ list_aliases() {
     exit 0
 }
 
+health_check() {
+    echo -e "${CYAN}🩺 Health Check${RESET}\n"
+    local ok=true
+
+    # Check scrcpy
+    if command -v scrcpy &>/dev/null; then
+        echo -e "${GREEN}✅ scrcpy installed$(scrcpy --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1 | xargs -I{} echo " (v{})")${RESET}"
+    else
+        echo -e "${RED}❌ scrcpy not found → Install: sudo apt install scrcpy${RESET}"; ok=false
+    fi
+
+    # Check adb
+    if command -v adb &>/dev/null; then
+        echo -e "${GREEN}✅ adb installed${RESET}"
+    else
+        echo -e "${RED}❌ adb not found → Install: sudo apt install adb${RESET}"; ok=false
+    fi
+
+    # Check device
+    local device_status
+    device_status=$(adb devices 2>/dev/null | awk 'NR==2 {print $2}')
+    if [ "$device_status" = "device" ]; then
+        echo -e "${GREEN}✅ Device connected${RESET}"
+    elif [ "$device_status" = "unauthorized" ]; then
+        echo -e "${YELLOW}⚠️  Device unauthorized → Allow USB Debugging on phone${RESET}"; ok=false
+    else
+        echo -e "${RED}❌ No device connected → Connect USB or check WiFi${RESET}"; ok=false
+    fi
+
+    # Check saved IP
+    if [ -f "$CONFIG" ]; then
+        local ip=$(cat "$CONFIG")
+        echo -e "${GREEN}✅ Saved IP: $ip${RESET}"
+        if ping -c 1 -W 1 "$ip" &>/dev/null; then
+            echo -e "${GREEN}✅ Device reachable on network${RESET}"
+            if adb connect "$ip:5555" 2>&1 | grep -q "connected"; then
+                echo -e "${GREEN}✅ ADB wireless working${RESET}"
+            else
+                echo -e "${YELLOW}⚠️  ADB wireless failed → Connect USB and run again${RESET}"; ok=false
+            fi
+        else
+            echo -e "${RED}❌ Device not reachable → Check WiFi connection${RESET}"; ok=false
+        fi
+    else
+        echo -e "${YELLOW}⚠️  No saved IP → Connect via USB first${RESET}"
+    fi
+
+    echo ""
+    if [ "$ok" = "true" ]; then
+        echo -e "${GREEN}✅ All checks passed! Ready to connect.${RESET}"
+    else
+        echo -e "${YELLOW}⚠️  Some issues found. Fix them and run again.${RESET}"
+    fi
+    exit 0
+}
+
+
+auto_quality() {
+    local ip="$1"
+    echo -e "${CYAN}📶 Measuring WiFi quality...${RESET}"
+    local latency
+    latency=$(ping -c 3 -q "$ip" 2>/dev/null | awk -F'/' 'END{print int($5)}')
+    latency=${latency:-999}
+    log_verbose "WiFi latency: ${latency}ms"
+
+    if [ "$latency" -lt 20 ]; then
+        DEFAULT_SIZE=1080; DEFAULT_BITRATE=8M; DEFAULT_FPS=60
+        echo -e "${GREEN}📶 Excellent WiFi → High quality (1080p/8M/60fps)${RESET}"
+    elif [ "$latency" -lt 50 ]; then
+        DEFAULT_SIZE=720; DEFAULT_BITRATE=4M; DEFAULT_FPS=60
+        echo -e "${YELLOW}📶 Good WiFi → Medium quality (720p/4M/60fps)${RESET}"
+    else
+        DEFAULT_SIZE=480; DEFAULT_BITRATE=2M; DEFAULT_FPS=30
+        echo -e "${RED}📶 Weak WiFi → Low quality (480p/2M/30fps)${RESET}"
+    fi
+}
+
 apply_quality() {
     case "$1" in
         low)
@@ -1153,6 +1234,15 @@ while [[ $# -gt 0 ]]; do
         --notify)
             NOTIFY=true
             ;;
+        --reconnect)
+            RECONNECT_ON_EXIT=true
+            ;;
+        --auto-quality)
+            AUTO_QUALITY=true
+            ;;
+        --check)
+            health_check
+            ;;
         --watch)
             watch_mode "${2:-30}"
             ;;
@@ -1258,7 +1348,15 @@ if [ -f "$CONFIG" ]; then
     SAVED_IP=$(cat "$CONFIG")
     echo -e "${YELLOW}📡 Trying saved connection: $SAVED_IP${RESET}"
     log_verbose "Connecting to $SAVED_IP:5555"
-    
+
+    # --- FIX 3: Auto-enable tcpip if USB device is connected ---
+    USB_DEVICE=$(adb devices | awk 'NR==2 {print $1}' | grep -v ':')
+    if [ -n "$USB_DEVICE" ]; then
+        log_verbose "USB device found, enabling tcpip..."
+        adb -s "$USB_DEVICE" tcpip 5555 &>/dev/null
+        sleep 1
+    fi
+
     adb connect "$SAVED_IP:5555" &>/dev/null
     sleep 1
     
@@ -1266,7 +1364,29 @@ if [ -f "$CONFIG" ]; then
         echo -e "${GREEN}✅ Connected wirelessly!${RESET}"
         [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Connected" "Connected to $SAVED_IP" "normal"
         log_verbose "Launching scrcpy with: --max-size $SCRCPY_SIZE --bit-rate $SCRCPY_BITRATE --max-fps $SCRCPY_FPS $SCRCPY_OPTS"
-        scrcpy -s "$SAVED_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
+
+        # --- FIX 4: Auto-quality based on WiFi ---
+        [ -z "$PROFILE" ] && [ "$AUTO_QUALITY" = "true" ] && auto_quality "$SAVED_IP"
+        SCRCPY_SIZE="${PROFILE_SIZE:-$DEFAULT_SIZE}"
+        SCRCPY_BITRATE="${PROFILE_BITRATE:-$DEFAULT_BITRATE}"
+        SCRCPY_FPS="${PROFILE_FPS:-$DEFAULT_FPS}"
+
+        # --- FIX 2: --reconnect flag: loop scrcpy on disconnect ---
+        if [ "$RECONNECT_ON_EXIT" = "true" ]; then
+            echo -e "${CYAN}🔄 Auto-reconnect enabled${RESET}"
+            while true; do
+                scrcpy -s "$SAVED_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
+                echo -e "${YELLOW}⚠️  Disconnected. Reconnecting in ${RECONNECT_INTERVAL}s...${RESET}"
+                [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Disconnected" "Reconnecting to $SAVED_IP..." "normal"
+                log_to_file "Disconnected from $SAVED_IP, reconnecting..."
+                sleep "$RECONNECT_INTERVAL"
+                adb connect "$SAVED_IP:5555" &>/dev/null
+            done
+        else
+            scrcpy -s "$SAVED_IP:5555" --max-size "$SCRCPY_SIZE" --bit-rate "$SCRCPY_BITRATE" --max-fps "$SCRCPY_FPS" $SCRCPY_OPTS
+            # --- FIX 6: Notify on disconnect ---
+            [ "$NOTIFY" = "true" ] && notify_send "Scrcpy Disconnected" "Connection to $SAVED_IP ended" "normal"
+        fi
         exit 0
     fi
     
@@ -1281,6 +1401,28 @@ DEVICE=$(adb devices | awk 'NR==2 {print $1}')
 
 if [ -z "$DEVICE" ]; then
     handle_error "No device found via USB or WiFi"
+fi
+
+# --- FIX 1: Wait for authorization ---
+DEVICE_STATUS=$(adb devices | awk 'NR==2 {print $2}')
+if [ "$DEVICE_STATUS" = "unauthorized" ]; then
+    echo -e "${YELLOW}🔐 Device needs authorization!${RESET}"
+    echo -e "${CYAN}👉 Check your phone and tap 'Allow USB Debugging'${RESET}"
+    [ "$NOTIFY" = "true" ] && notify_send "Scrcpy" "Allow USB Debugging on your phone" "normal"
+    local waited=0
+    while [ $waited -lt 30 ]; do
+        sleep 2
+        waited=$((waited + 2))
+        DEVICE_STATUS=$(adb devices | awk 'NR==2 {print $2}')
+        if [ "$DEVICE_STATUS" = "device" ]; then
+            echo -e "${GREEN}✅ Authorized!${RESET}"
+            break
+        fi
+        echo -e "${YELLOW}⏳ Waiting... (${waited}s)${RESET}"
+    done
+    if [ "$DEVICE_STATUS" != "device" ]; then
+        handle_error "Device not authorized after 30s. Enable USB Debugging and try again."
+    fi
 fi
 
 echo -e "${GREEN}✅ Device found: $DEVICE${RESET}"

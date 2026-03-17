@@ -1,8 +1,36 @@
 # Development Roadmap & Ideas
 
-## 🎯 Feature Ideas
+## ✅ Completed in v3.1.0
 
-### 1️⃣ Easy (Beginner-friendly)
+- [x] ADB unauthorized loop — waits and prompts user to allow USB debugging
+- [x] `--reconnect` — auto-reconnect when scrcpy exits
+- [x] Auto-enable `adb tcpip 5555` when USB device is connected
+- [x] `--auto-quality` — measures WiFi latency and picks best quality
+- [x] `--check` — health check that diagnoses connection issues step by step
+- [x] Desktop notification on disconnect (with `--notify`)
+
+---
+
+## 🧑‍💻 Developer-Focused Features (Proposed)
+
+### Workflow
+- [ ] `--logcat [PACKAGE]` — stream device logcat filtered by package name
+- [ ] `--launch APP` — launch a specific app after connecting
+- [ ] `--input-text "text"` — type text into device from keyboard (test data)
+
+### Debugging
+- [ ] `--crash-report` — monitor and auto-save crash stacktraces
+- [ ] `--port-forward PORT` — forward port between device and computer
+- [ ] `--clear-app APP` — clear app data in one command
+
+### Performance Testing
+- [ ] `--fps-overlay` — show FPS counter on screen during session
+- [ ] `--simulate-network slow|offline` — simulate slow/offline network
+- [ ] `--battery-level N` — set battery level for testing
+
+---
+
+
 
 #### A) Additional scrcpy Options
 - [ ] `--record` - Auto recording
